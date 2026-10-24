@@ -105,6 +105,8 @@ enforces.
 
 - Python 3.11+, distributed as a `uv`-installable CLI.
 - Exactly two backends: LikeC4 and LinkML. No abstraction layer over either.
+  ADR-0004 (proposed) replaces this with `slarti`'s own vocabulary, produced by
+  built-in LikeC4 and Mermaid adapters or by any other tool.
 - No cache and no state file: everything is derived on each invocation.
 - No JVM, no Docker and no browser on the default path.
 - Supported ranges are enforced at runtime: LikeC4 `>=1.59,<2`, LinkML

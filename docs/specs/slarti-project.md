@@ -27,7 +27,8 @@ them. It owns exactly the joins nobody else can hold:
 | Document ↔ rules | The constraints table says a rule is enforced by a shape that was deleted; or a shape exists that no rule references. |
 | Document ↔ models | A diagram in the document no longer matches the model it came from. |
 
-Everything else — parsing, validating, rendering, generating — is delegated.
+Everything else — parsing, validating, rendering, generating — is delegated. The one
+planned exception is the built-in Mermaid adapter's parser (ADR-0004).
 
 ## 2. Non-goals
 
@@ -35,8 +36,9 @@ Everything else — parsing, validating, rendering, generating — is delegated.
 - **Not a renderer.** Diagrams come from `likec4 codegen` / `likec4 export` and
   `linkml gen-erdiagram`. `slarti` places them; it does not draw them.
 - **Not a documentation site generator.** `likec4 build` already deploys to GitHub Pages.
-- **Not pluggable.** No Structurizr backend, no PlantUML backend, no alternative
-  schema language. See I8.
+- **No plugin API.** `slarti` loads no third-party code. It is extensible through
+  data instead: any tool that produces instances of `slarti`'s vocabulary is a
+  valid input. See I8 and ADR-0004.
 - **Not an arc42 enforcer.** Sections omitted for lack of content are a feature; the
   tool must not require a complete template.
 - **Not a formal methods tool.** Alloy/Z3/TLA+ exploration stays a human activity
@@ -98,7 +100,7 @@ The tool's own constitution. Each is testable; each has a test in `slarti`'s sui
 | I5 | Styling, view definitions and element kinds belong entirely to the user, in `specification` blocks and `likec4.config.ts`. `slarti` injects no styles and has no theme. | Test: generated output contains no `classDef`, no color, no style directive authored by `slarti`. |
 | I6 | Config is passed through, never mirrored. `slarti` reads the user's `likec4.config.ts` and `pyproject.toml` locations; it does not restate their settings. | Review: `slarti.toml` contains paths and nothing else. |
 | I7 | Generation is idempotent. Running `slarti docs` twice produces byte-identical output. | Test: hash comparison across two runs. |
-| I8 | Exactly two backends are supported: LikeC4 and LinkML. No abstraction layer over either. | Review: no backend interface, no registry of adapters. |
+| I8 | `slarti` checks instances of its own LinkML vocabulary. Built-in adapters (LikeC4, Mermaid) produce them; any other producer is equally valid. No plugin API and no registry of adapters. *Supersedes the original "exactly two backends: LikeC4 and LinkML"; see ADR-0004 (proposed). Until it is accepted and implemented, LikeC4 remains the structure backend.* | Review: no plugin interface, no third-party code loaded. |
 | I9 | Supported version ranges are enforced at runtime. Outside the range, `slarti` refuses to run rather than producing possibly-wrong output. | Test: mocked version probes at range boundaries. |
 | I10 | The default path requires no JVM, no Docker and no browser. Anything needing Playwright is opt-in and off by default. | Test: default `slarti check` and `slarti docs` in a container with none of these. |
 | I11 | Every finding carries a stable rule ID, a file path, and a remedy sentence. | Test: schema-validate the `--json` output; assert every finding is complete. |
