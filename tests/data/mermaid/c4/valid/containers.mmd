@@ -1,0 +1,18 @@
+---
+title: Containers of Todo
+---
+C4Container
+  %% slarti: ignore org the organisation, which is not part of the architecture
+  Person_Ext(user, "User")
+  Enterprise_Boundary(org, "Example Ltd") {
+    System_Boundary(todo, "Todo") {
+      Container(web, "Web app", "Python", "Serves the lists")
+      ContainerDb(taskstore, "Task store", $techn="SQLite")
+    }
+  }
+  SystemQueue_Ext(mail, "Mail service")
+  Rel(user, web, "uses", "HTTPS")
+  Rel_Down(web, taskstore, "reads and writes", $descr="one query per list")
+  Rel_L(web, mail, "sends reminders")
+  UpdateRelStyle(user, web, $offsetY="-40")
+  UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")

@@ -12,7 +12,7 @@ from typer.testing import CliRunner
 
 from slarti import env, runner, vocabulary
 from slarti.adapters import mermaid
-from slarti.adapters.mermaid import blocks, er, sequence
+from slarti.adapters.mermaid import blocks, c4, er, sequence
 from slarti.adapters.mermaid.diagram import Unsupported
 from slarti.checks import structure
 from slarti.cli import app
@@ -23,7 +23,7 @@ from tests.conftest import make_config
 
 DATA = Path(__file__).parent / "data" / "mermaid"
 ARCHITECTURE = yaml.safe_load((DATA / "architecture.yaml").read_text(encoding="utf-8"))
-KINDS = ("sequence", "er", "blocks")
+KINDS = ("sequence", "er", "c4", "blocks")
 
 
 def _fixtures(state: str) -> list[Path]:
@@ -150,6 +150,66 @@ def test_classes_attach_entities_by_name_and_name_their_kind() -> None:
     assert entities["TODO-LIST"]["element_kinds"] == ["Table"]
     assert entities["TASK"]["element"] == "todo.tasks"
     assert entities["TASK"]["location"]["label"] == "Task"
+
+
+def test_c4_macros_attach_by_alias_and_name_their_profile_kind() -> None:
+    shapes = {n["location"]["source_id"]: n for n in diagram("c4/valid/context.mmd")["nodes"]}
+    assert shapes["user"]["kind"] == "C4Shape" and shapes["user"]["element"] == "user"
+    assert shapes["user"]["element_kinds"] == ["Person"]
+    assert shapes["user"]["description"] == "Someone who keeps lists"
+    assert shapes["todo"]["element_kinds"] == ["SoftwareSystem"]
+    assert shapes["mail"]["external"] is True and shapes["mail"]["macro"] == "System_Ext"
+    assert shapes["mail"]["location"]["label"] == "Mail service"
+
+
+def test_c4_relationships_carry_their_macro_and_parameters() -> None:
+    found = diagram("c4/valid/context.mmd")
+    assert found["location"]["label"] == "The Todo system in context"
+    rel = found["edges"][1]
+    assert rel["kind"] == "C4Relationship" and rel["relation"] == "sends reminders"
+    assert (rel["macro"], rel["technology"]) == ("Rel_R", "SMTP")
+    assert rel["location"]["line"] == 8
+
+
+def test_c4_boundaries_nest_the_shapes_drawn_inside_them() -> None:
+    file = "c4/valid/containers.mmd"
+    shapes = {n["location"]["source_id"]: n for n in diagram(file)["nodes"]}
+    assert shapes["org"]["kind"] == "C4Boundary" and "within" not in shapes["org"]
+    assert shapes["org"]["ignored"].startswith("the organisation")
+    assert shapes["todo"]["within"] == f"{file}/org"
+    assert shapes["todo"]["element_kinds"] == ["SoftwareSystem"]
+    assert shapes["web"]["within"] == shapes["taskstore"]["within"] == f"{file}/todo"
+    assert shapes["taskstore"]["technology"] == "SQLite"
+    assert "within" not in shapes["mail"]
+
+
+def test_a_c4_directive_overrides_the_macro() -> None:
+    shapes = {n["location"]["source_id"]: n
+              for n in diagram("c4/valid/components.mmd")["nodes"]}
+    assert shapes["page"]["element"] == "views" and "element_kinds" not in shapes["page"]
+    assert shapes["legend"]["boundary_type"] == "note"
+
+
+@pytest.mark.parametrize("source", [
+    'C4Context\n  Deployment_Node(dn, "Host")\n',
+    'C4Context\n  Person(a, "A")\n  Rel_Back(a, a, "x")\n',
+    'C4Context\n  Person(a, A)\n',
+    'C4Context\n  Person(a, "A", "d", "s", "t", "l", "extra")\n',
+    'C4Context\n  Person(a, "A")\n  Rel(a, b, "uses")\n',
+    'C4Context\n  Boundary(b, "B") {\n  }\n',
+])
+def test_c4_reader_rejects_what_its_subset_omits(source: str) -> None:
+    with pytest.raises(Unsupported) as raised:
+        c4.read(source)
+    assert raised.value.line in (2, 3) and raised.value.text
+
+
+@pytest.mark.parametrize(("macro", "family"), [
+    ("ContainerDb_Ext", "Container"), ("SystemQueue", "System"), ("Rel_Down", "Rel"),
+    ("System_Boundary", "System_Boundary"), ("Person_Ext", "Person"),
+])
+def test_c4_variants_belong_to_their_family(macro: str, family: str) -> None:
+    assert c4.family(macro) == family
 
 
 def test_unsupported_syntax_names_the_file_and_line() -> None:

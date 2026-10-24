@@ -6,7 +6,7 @@ description: >-
   structural layer records what a diagram says and knows no methodology. The
   architectural layer is the base a project extends, in its own schema, with the
   kinds of element and relation it means. Import it as `slarti:vocabulary`.
-version: 0.4.0
+version: 0.5.0
 license: Apache-2.0
 prefixes:
   slarti_vocabulary: https://dsummersl.github.io/slarti/vocabulary/
@@ -111,6 +111,9 @@ classes:
           The element kinds the notation says the depicted element is one of,
           such as the classes a Mermaid node is assigned.
         multivalued: true
+      within:
+        description: The node this node is drawn inside, such as a boundary.
+        range: Node
 
   Edge:
     description: A line drawn from one node to another.
@@ -206,6 +209,47 @@ classes:
       identifying:
         description: Whether the target cannot exist without the source (a solid line).
         range: boolean
+
+  # C4 diagrams.
+
+  C4Shape:
+    description: >-
+      A person, software system, container or component drawn in a C4 diagram.
+      Its macro names the C4 profile kind of the element it depicts.
+    is_a: Node
+    attributes:
+      macro:
+        description: The macro the shape is drawn with, as written, such as ContainerDb_Ext.
+        required: true
+      external:
+        description: Drawn as outside the scope of the diagram (a macro ending in _Ext).
+        range: boolean
+      technology:
+        description: The technology the diagram gives the shape.
+      description:
+        description: The description the diagram gives the shape.
+
+  C4Boundary:
+    description: A boundary drawn around other shapes in a C4 diagram.
+    is_a: Node
+    attributes:
+      macro:
+        description: The macro the boundary is drawn with, as written, such as System_Boundary.
+        required: true
+      boundary_type:
+        description: The type a bare Boundary is labelled with.
+
+  C4Relationship:
+    description: A relationship drawn from one C4 shape to another.
+    is_a: Edge
+    attributes:
+      macro:
+        description: The macro the relationship is drawn with, as written, such as Rel_D.
+        required: true
+      technology:
+        description: The technology the diagram gives the relationship.
+      description:
+        description: The description the diagram gives the relationship.
 
   # Architectural layer: what the user means. Projects extend these.
 

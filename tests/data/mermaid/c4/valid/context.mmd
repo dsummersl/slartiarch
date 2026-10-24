@@ -1,0 +1,8 @@
+C4Context
+  title The Todo system in context
+  %% Every macro attaches its shape by alias and names the element's C4 kind.
+  Person(user, "User", "Someone who keeps lists")
+  System(todo, "Todo", "Keeps the lists")
+  System_Ext(mail, "Mail service", "Delivers reminders")
+  Rel(user, todo, "uses")
+  Rel_R(todo, mail, "sends reminders", "SMTP")

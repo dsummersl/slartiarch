@@ -148,8 +148,8 @@ CHECKS: dict[str, str] = {
         "from its kind."
     ),
     "KIND-1": (
-        "A node drawn as one or more element kinds (a Mermaid class) depicts an element of "
-        "none of them.\n"
+        "A node drawn as one or more element kinds (a Mermaid class or C4 macro) depicts "
+        "an element of none of them.\n"
         "Remedy: draw the node as its element's kind, or attach it to an element of the "
         "kind it is drawn as."
     ),
@@ -159,8 +159,8 @@ CHECKS: dict[str, str] = {
     ),
     "MMD-2": (
         "A Mermaid diagram is of a type slarti cannot read.\n"
-        "Remedy: draw it as a supported type (sequenceDiagram, erDiagram), or move it out "
-        "of the configured Mermaid inputs."
+        "Remedy: draw it as a supported type (sequenceDiagram, erDiagram, C4Context, "
+        "C4Container, C4Component), or move it out of the configured Mermaid inputs."
     ),
     "MMD-3": (
         "A Mermaid diagram uses syntax outside the supported subset of its type.\n"

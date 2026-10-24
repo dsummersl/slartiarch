@@ -43,6 +43,10 @@ or `class A Service`) is attached to the element its own name resolves to, and t
 class is the kind that element must be (`KIND-1`). With a project schema, a class
 also matches every kind beneath it.
 
+**C4 macros** work the same way. `Container(web, …)` attaches the node to the
+element `web` resolves to, and the macro names the kind that element must be,
+from the [C4 profile](#c4-diagrams).
+
 **Directives**: `%% slarti:` comments, which Mermaid ignores.
 
 | Directive | Meaning |
@@ -146,9 +150,77 @@ Not supported, each a finding: quoted entity names, written cardinalities
 (`one or more`, `zero or one`, …), numeric cardinalities, and unquoted labels of
 more than one word.
 
+## C4 diagrams
+
+`C4Context`, `C4Container` and `C4Component` diagrams are read the same way; the
+header does not limit which macros a diagram uses. Elements and boundaries become
+`C4Shape` and `C4Boundary` nodes, with the `macro` as written, their `technology`
+and `description`, and whether a shape is `external` (a macro ending in `_Ext`). A
+node drawn inside a boundary names it in `within`. `Rel` statements become
+`C4Relationship` edges, whose label names the relation they depict, as in the other
+types.
+
+Each macro is mapped through the C4 profile (`slarti:c4`): it names the kind of
+element the node depicts, and attaches the node by its alias, as a class does.
+
+| Macro | Kind |
+| --- | --- |
+| `Person`, `Person_Ext` | `Person` |
+| `System`, `SystemDb`, `SystemQueue`, each also `_Ext`; `System_Boundary` | `SoftwareSystem` |
+| `Container`, `ContainerDb`, `ContainerQueue`, each also `_Ext`; `Container_Boundary` | `Container` |
+| `Component`, `ComponentDb`, `ComponentQueue`, each also `_Ext` | `Component` |
+| `Boundary`, `Enterprise_Boundary` | none: attach or ignore it with a directive |
+
+A project that imports the profile, or whose own kinds descend from these, passes
+`KIND-1` as is. A project with kinds of its own attaches its nodes with directives
+instead: an `attach` directive overrides the macro, so the macro then names no kind.
+
+```mermaid
+C4Container
+  title Containers of Todo
+  %% slarti: ignore org the organisation, which is not part of the architecture
+  Person(user, "User", "Someone with lists")
+  Enterprise_Boundary(org, "Example Ltd") {
+    System_Boundary(todo, "Todo") {
+      Container(web, "Web app", "Python", "Serves the lists")
+      ContainerDb(store, "Task store", $techn="SQLite")
+    }
+  }
+  System_Ext(mail, "Mail service")
+  Rel(user, web, "uses", "HTTPS")
+  Rel_D(web, store, "reads and writes")
+  Rel(web, mail, "sends reminders")
+  UpdateRelStyle(user, web, $offsetY="-40")
+```
+
+Supported:
+
+| Construct | Syntax |
+| --- | --- |
+| Header | `C4Context`, `C4Container`, `C4Component` |
+| Elements | `<macro>(<alias>, "<label>", …)` for the macros above, one per line |
+| Boundaries | `<boundary>(<alias>, "<label>", …) {`, the shapes inside it one per line, and `}` on a line of its own; boundaries nest, and none is empty |
+| Relationships | `Rel`, `Rel_U`, `Rel_Up`, `Rel_D`, `Rel_Down`, `Rel_L`, `Rel_Left`, `Rel_R`, `Rel_Right`, written `<rel>(<from>, <to>, "<label>", …)` |
+| Arguments | Mermaid's positional parameters, each a `"quoted"` string, or `$<name>="<value>"` |
+| Other | `title <text>`, `UpdateElementStyle(…)`, `UpdateRelStyle(…)`, `UpdateBoundaryStyle(…)`, `UpdateLayoutConfig(…)` |
+
+The parameters after the alias are those Mermaid defines for each macro:
+`label, descr, sprite, tags, link` for persons and systems; `label, techn, descr,
+sprite, tags, link` for containers, components and relationships; `label, type,
+tags, link` for `Boundary`; and `label, tags, link` for the other boundaries. The
+vocabulary records `label`, `techn` (as `technology`), `descr` (as `description`)
+and `type` (as `boundary_type`); `sprite`, `tags` and `link` only change how the
+diagram renders. An alias starts with a letter or `_` and holds letters, digits
+and `_`.
+
+Not supported, each a finding: `C4Dynamic` and `C4Deployment` (an `MMD-2`),
+`Deployment_Node` and `Node`, `BiRel`, `Rel_Back`, `RelIndex`, unquoted
+arguments, a parameter the macro does not take, and a relationship naming an
+alias the diagram does not declare.
+
 ## Other diagram types
 
-Any other type (`flowchart`, `classDiagram`, `stateDiagram`, `C4Context`, …) is
+Any other type (`flowchart`, `classDiagram`, `stateDiagram`, `C4Dynamic`, …) is
 `MMD-2`. Draw it as a supported type, or keep it out of the configured inputs.
 More types are added one at a time.
 

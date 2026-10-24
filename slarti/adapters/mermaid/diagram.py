@@ -30,6 +30,7 @@ class Shape:
     kind: str
     classes: list[str] = field(default_factory=list)
     extra: Instance = field(default_factory=dict)
+    within: str | None = None
 
 
 @dataclass

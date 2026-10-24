@@ -124,7 +124,7 @@ YAML/JSON serialization, required `SourceLocation` fields and versioning.
 
 ### Mermaid diagrams
 
-`slarti` reads Mermaid sequence and entity-relationship diagrams itself, in Python,
+`slarti` reads Mermaid sequence, entity-relationship and C4 diagrams itself, in Python,
 from `.mmd` files and from the ` ```mermaid ` fences of Markdown files:
 
 ```toml
@@ -132,10 +132,10 @@ from `.mmd` files and from the ` ```mermaid ` fences of Markdown files:
 mermaid = ["docs/architecture.md"]
 ```
 
-Every participant, entity, message and relationship must be attached to the
-architecture or ignored with a reason. A Mermaid class attaches a node by name and
-says what kind its element is; `%% slarti:` comments say the rest, so the diagrams
-render unchanged:
+Every participant, entity, shape, message and relationship must be attached to the
+architecture or ignored with a reason. A Mermaid class, or a C4 macro such as
+`Container(…)`, attaches a node by name and says what kind its element is;
+`%% slarti:` comments say the rest, so the diagrams render unchanged:
 
 ```mermaid
 sequenceDiagram
