@@ -1,0 +1,21 @@
+# An edge depicts a declared relation.
+elements:
+  - {id: todo.api, kind: Service, name: API, aliases: [api]}
+  - {id: todo.db, kind: Database, name: Database}
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db}
+diagrams:
+  - id: d
+    location: {file: notes.md, line: 1}
+    nodes:
+      - id: d/api
+        location: {file: notes.md, line: 2}
+        element: todo.api
+      - id: d/db
+        location: {file: notes.md, line: 2}
+        element: todo.db
+    edges:
+      - source: d/api
+        target: d/db
+        location: {file: notes.md, line: 4}
+        relation: Reads

@@ -17,13 +17,38 @@ SUFFIXES = (".yaml", ".yml", ".json")
 TARGET_CLASS = "Corpus"
 
 
+@dataclass(frozen=True)
+class Drawn:
+    """A diagram node or edge with its disposition and where it was written."""
+
+    id: str
+    file: str
+    line: int | None
+    attaches_to: str | None
+    ignored: str | None
+    source: str = ""
+    target: str = ""
+
+    @property
+    def is_edge(self) -> bool:
+        return bool(self.source)
+
+    @property
+    def attached(self) -> bool:
+        """Attached and not also ignored: the only state an attachment counts in."""
+        return self.attaches_to is not None and self.ignored is None
+
+
 @dataclass
 class Corpus:
-    """The architectural elements and relations read from every instance file."""
+    """The diagrams, architectural elements and relations read from every instance file."""
 
     elements: dict[str, Element] = field(default_factory=dict)
     relations: list[Relation] = field(default_factory=list)
     element_files: dict[str, str] = field(default_factory=dict)
+    aliases: dict[str, list[str]] = field(default_factory=dict)
+    nodes: list[Drawn] = field(default_factory=list)
+    edges: list[Drawn] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
     files: int = 0
 
@@ -109,14 +134,58 @@ def _element(raw: dict[str, Any]) -> Element:
 
 def _relation(raw: dict[str, Any]) -> Relation:
     title = raw.get("description") or raw.get("kind") or ""
-    return Relation(source=str(raw["source"]), target=str(raw["target"]), title=str(title))
+    return Relation(
+        source=str(raw["source"]),
+        target=str(raw["target"]),
+        title=str(title),
+        kind=_optional(raw, "kind"),
+    )
+
+
+def _optional(raw: dict[str, Any], key: str) -> str | None:
+    value = raw.get(key)
+    return None if value is None else str(value)
+
+
+def _drawn(raw: dict[str, Any], identifier: str, attachment: str) -> Drawn:
+    location = raw["location"]
+    return Drawn(
+        id=identifier,
+        file=str(location["file"]),
+        line=location.get("line"),
+        attaches_to=_optional(raw, attachment),
+        ignored=_optional(raw, "ignored"),
+        source=str(raw.get("source", "")),
+        target=str(raw.get("target", "")),
+    )
+
+
+def _edge_id(raw: dict[str, Any]) -> str:
+    return f"{raw['source']} -> {raw['target']}"
+
+
+def _add_diagram(corpus: Corpus, raw: dict[str, Any]) -> None:
+    corpus.nodes.extend(_drawn(n, str(n["id"]), "element") for n in _listed(raw, "nodes"))
+    corpus.edges.extend(_drawn(e, _edge_id(e), "relation") for e in _listed(raw, "edges"))
+
+
+def _add_element(corpus: Corpus, file: str, raw: dict[str, Any]) -> None:
+    identifier = str(raw["id"])
+    corpus.elements[identifier] = _element(raw)
+    corpus.element_files[identifier] = file
+    corpus.aliases[identifier] = [str(a) for a in raw.get("aliases") or []]
+
+
+def _listed(raw: dict[str, Any], key: str) -> list[dict[str, Any]]:
+    return list(raw.get(key) or [])
 
 
 def _add(corpus: Corpus, config: Config, path: Path, raw: dict[str, Any]) -> None:
-    for element in raw.get("elements") or []:
-        corpus.elements[str(element["id"])] = _element(element)
-        corpus.element_files[str(element["id"])] = config.rel(path)
-    corpus.relations.extend(_relation(r) for r in raw.get("relations") or [])
+    for element in _listed(raw, "elements"):
+        _add_element(corpus, config.rel(path), element)
+    corpus.relations.extend(_relation(r) for r in _listed(raw, "relations"))
+    for diagram in _listed(raw, "diagrams"):
+        _add_diagram(corpus, diagram)
 
 
 def _findings(config: Config, path: Path, raw: dict[str, Any], view: SchemaView) -> list[Finding]:

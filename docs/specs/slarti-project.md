@@ -250,6 +250,24 @@ Every check has a stable ID. IDs are permanent; retired checks are never reused.
 The ownership checks read only vocabulary instances. LikeC4's export reaches them
 translated into `Element`s, as any other producer's instances do.
 
+**Diagram slarti (`DSP-*`, `IDN-*`, `DNG-*`, `VIS-*`)**
+
+| ID | Finding |
+|----|---------|
+| DSP-1 | `Node` or `Edge` is neither attached nor ignored |
+| DSP-2 | `Node` or `Edge` is both attached and ignored |
+| DSP-3 | `Node` or `Edge` is ignored without a reason |
+| IDN-1 | An id or alias resolves to more than one `Element` |
+| IDN-2 | A `Node` attaches through a name that resolves to more than one `Element` |
+| DNG-1 | A `Node` attaches to a name that is no `Element`'s id or alias |
+| DNG-2 | An `Edge` depicts a `Relation` not declared between its endpoints' elements |
+| DNG-3 | An attached `Edge` ends at a `Node` that is ignored or unattached |
+| DNG-4 | An `Edge` ends at a node id no `Diagram` declares |
+| VIS-1 | An `Element` whose kind is annotated `drawn: true` appears in no `Diagram` |
+
+These read vocabulary instances only, never diagram syntax. Identity resolves on
+ids plus declared aliases; `slarti` never guesses between candidates.
+
 **Registry slarti (`REG-*`)**
 
 | ID | Finding |

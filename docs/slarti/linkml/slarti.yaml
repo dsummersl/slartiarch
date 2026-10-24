@@ -181,6 +181,8 @@ classes:
       title:
         description: What the relation is called.
         required: true
+      kind:
+        description: The relation's kind, when its producer declares one.
 
   Region:
     description: A generated region of the architecture document, between two markers.

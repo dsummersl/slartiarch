@@ -196,7 +196,7 @@ class Enforcer(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.registry'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
-    kind: Optional[EnforcerKind] = Field(default=None, description="""What sort of enforcer this is.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element']} })
+    kind: Optional[EnforcerKind] = Field(default=None, description="""What sort of enforcer this is.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element', 'Relation']} })
     ref: Optional[str] = Field(default=None, description="""The identifier of the enforcer, resolved against the models.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer']} })
     fixture: Optional[str] = Field(default=None, description="""A case that must fail, naming this enforcer in the violation report.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer']} })
     fixture_class: Optional[str] = Field(default=None, description="""The schema class a YAML fixture instantiates.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer']} })
@@ -211,7 +211,7 @@ class Element(ConfiguredBaseModel):
 
     id: str = Field(default=..., description="""The fully qualified element identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'Element']} })
     title: str = Field(default=..., description="""The element's display title.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element', 'Relation']} })
-    kind: str = Field(default=..., description="""The element's kind, as its producer declares it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element']} })
+    kind: str = Field(default=..., description="""The element's kind, as its producer declares it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element', 'Relation']} })
     owns: list[str] = Field(default=..., description="""The schema classes this element claims.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element']} })
 
 
@@ -225,6 +225,7 @@ class Relation(ConfiguredBaseModel):
     source: str = Field(default=..., description="""The element the relation starts at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Relation']} })
     target: str = Field(default=..., description="""The element the relation ends at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Relation']} })
     title: str = Field(default=..., description="""What the relation is called.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element', 'Relation']} })
+    kind: Optional[str] = Field(default=None, description="""The relation's kind, when its producer declares one.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element', 'Relation']} })
 
 
 class Region(ConfiguredBaseModel):
