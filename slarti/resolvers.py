@@ -27,15 +27,15 @@ def _slot_exists(models: Models, ref: str) -> bool:
 
 def _relation_exists(models: Models, ref: str) -> bool:
     pair = _split_relation(ref)
-    return pair is not None and models.architecture.has_relation(*pair)
+    return pair is not None and models.vocabulary.has_relation(*pair)
 
 
 def _relation_absent(models: Models, ref: str) -> bool:
     pair = _split_relation(ref)
     if pair is None:
         return False
-    known = models.architecture.elements
-    return all(part in known for part in pair) and not models.architecture.has_relation(*pair)
+    known = models.vocabulary.elements
+    return all(part in known for part in pair) and not models.vocabulary.has_relation(*pair)
 
 
 def absent_relation_violated(models: Models, ref: str) -> bool:
@@ -44,7 +44,7 @@ def absent_relation_violated(models: Models, ref: str) -> bool:
     if pair is None:
         return False
     source, target = pair
-    model = models.architecture
+    model = models.vocabulary
     known = source in model.elements and target in model.elements
     return known and model.has_relation(source, target)
 
@@ -62,7 +62,7 @@ RESOLVERS: dict[str, Callable[[Models, str], bool]] = {
     ),
     "likec4_relation": _relation_exists,
     "likec4_absent_relation": _relation_absent,
-    "likec4_element": lambda models, ref: ref in models.architecture.elements,
+    "likec4_element": lambda models, ref: ref in models.vocabulary.elements,
     "ownership": _ownership_holds,
     "external": lambda models, ref: True,
 }

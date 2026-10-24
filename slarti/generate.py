@@ -61,7 +61,7 @@ def unverified_table(constraints: list[Constraint]) -> str:
 
 def ownership_table(models: Models) -> str:
     """The ownership seam, rendered: which container owns which entity."""
-    elements = models.architecture.elements
+    elements = models.vocabulary.elements
     rows = []
     for name in owned_classes(models):
         owner = models.class_annotation(name, "owner")

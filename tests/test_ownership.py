@@ -48,8 +48,8 @@ def test_own4_element_claims_an_unknown_entity(tmp_path: Path) -> None:
 
 def test_own5_two_elements_claim_the_same_class(tmp_path: Path) -> None:
     models = make_models(tmp_path)
-    claimed = models.likec4.elements
-    claimed["todo.db"] = claimed["todo.db"].model_copy(update={"owns": ["Task"]})
+    elements = next(iter(models.likec4.values()))["elements"]
+    next(e for e in elements if e["id"] == "todo.db")["owns"] = ["Task"]
     findings = ownership.check(models)
     assert ids(findings) == ["OWN-5"]
 

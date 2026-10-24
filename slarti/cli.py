@@ -7,9 +7,9 @@ import typer
 
 from slarti import __version__, docs, env, report, runner, scaffold, vocabulary
 from slarti import config as config_module
+from slarti.adapters.likec4 import AdapterError
 from slarti.checks import doc_checks
 from slarti.domain import Probe
-from slarti.models import ModelError
 from slarti.registry import RegistryError
 
 app = typer.Typer(
@@ -81,7 +81,7 @@ def _context() -> runner.Context:
     _gate(cfg)
     try:
         return runner.context(cfg)
-    except (RegistryError, ModelError) as exc:
+    except (RegistryError, AdapterError) as exc:
         typer.secho(str(exc), fg="red", err=True)
         raise typer.Exit(EXIT_ENVIRONMENT) from exc
 

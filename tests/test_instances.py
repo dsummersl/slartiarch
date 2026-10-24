@@ -49,7 +49,7 @@ def test_a_directory_input_reads_yaml_and_json(tmp_path: Path) -> None:
 
 def test_instances_join_the_architecture(tmp_path: Path) -> None:
     models = Models(config=project(tmp_path))
-    architecture = models.architecture
+    architecture = models.vocabulary
     assert sorted(architecture.elements) == ["todo.api", "todo.db"]
     assert architecture.elements["todo.api"].owns == ["Reads", "Service", "Task"]
     assert architecture.has_relation("todo.api", "todo.db")

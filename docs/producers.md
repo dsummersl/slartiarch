@@ -122,6 +122,26 @@ classes:
     annotations: {drawn: true}
 ```
 
+## The built-in LikeC4 adapter
+
+The LikeC4 adapter is one producer among others. It runs `likec4 export json`
+over the `likec4` directory and translates the export into the same instances an
+instance file holds, one `Corpus` per `.c4` file:
+
+- each LikeC4 element becomes an `Element` with its `kind`, `name`, `description`,
+  and `owns` read from its `owns` metadata;
+- each relationship becomes a `Relation`, kept with its source element;
+- each view becomes a `Diagram`. A node depicting an element is attached to it;
+  a group is ignored. An edge that draws a declared relationship is attached by
+  that relationship's kind or title; an edge LikeC4 derived from relationships
+  between nested elements is ignored, since those relationships are checked as
+  declared.
+
+Diagrams, nodes and edges carry a `SourceLocation` whose `file` and `line` point
+at the view's declaration in the `.c4` source, and whose `source_id` is LikeC4's
+own id. Elements are filed under the `.c4` file that declares them. When an
+instance file declares an element with the same id, the instance file wins.
+
 ## Malformed input
 
 Malformed input is a finding, not a crash, and it stops the run before any seam

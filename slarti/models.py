@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-import tempfile
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -12,87 +10,10 @@ from rdflib import Graph
 from rdflib.namespace import SH
 from rdflib.term import URIRef
 
-from slarti import instances, proc, vocabulary
+from slarti import instances, vocabulary
+from slarti.adapters import likec4
 from slarti.config import Config
-from slarti.domain import Element, Relation
 from slarti.instances import Corpus
-
-
-class ModelError(Exception):
-    """Raised when a delegated tool cannot produce a model dump."""
-
-
-@dataclass(frozen=True)
-class Architecture:
-    """Architectural elements and relations, from LikeC4's export or instance files."""
-
-    elements: dict[str, Element]
-    relations: tuple[Relation, ...]
-    views: tuple[str, ...]
-
-    def has_relation(self, source: str, target: str) -> bool:
-        return any(r.source == source and r.target == target for r in self.relations)
-
-
-def _parse_owns(metadata: dict[str, str]) -> list[str]:
-    raw = metadata.get("owns", "")
-    return sorted(part.strip() for part in raw.split(",") if part.strip())
-
-
-def _element(raw: dict[str, object]) -> Element:
-    metadata = raw.get("metadata") or {}
-    assert isinstance(metadata, dict)
-    return Element(
-        id=str(raw["id"]),
-        title=str(raw.get("title", "")),
-        kind=str(raw.get("kind", "")),
-        owns=_parse_owns(metadata),
-    )
-
-
-def _relation(raw: dict[str, object]) -> Relation:
-    source = raw["source"]
-    target = raw["target"]
-    assert isinstance(source, dict) and isinstance(target, dict)
-    return Relation(
-        source=str(source["model"]),
-        target=str(target["model"]),
-        title=str(raw.get("title", "")),
-    )
-
-
-def parse_likec4(payload: dict[str, object]) -> Architecture:
-    """Build the model from a `likec4 export json` payload."""
-    raw_elements = _mapping(payload, "elements")
-    raw_relations = _mapping(payload, "relations")
-    elements = {key: _element(value) for key, value in sorted(raw_elements.items())}
-    relations = tuple(_relation(raw_relations[key]) for key in sorted(raw_relations))
-    views = tuple(sorted(_mapping(payload, "views")))
-    return Architecture(elements=elements, relations=relations, views=views)
-
-
-def _mapping(payload: dict[str, object], key: str) -> dict[str, dict[str, object]]:
-    raw = payload.get(key) or {}
-    if not isinstance(raw, dict):
-        raise ModelError(f"Expected '{key}' to be a mapping in the LikeC4 export.")
-    return raw
-
-
-EMPTY = Architecture(elements={}, relations=(), views=())
-
-
-def export_likec4(config: Config) -> Architecture:
-    """Invoke `likec4 export json` and parse the result; empty when LikeC4 is not used."""
-    if not config.likec4_enabled():
-        return EMPTY
-    with tempfile.TemporaryDirectory() as tmp:
-        out = Path(tmp) / "model.json"
-        argv = proc.likec4(["export", "json", "-o", str(out), str(config.path("likec4"))])
-        result = proc.run(argv, cwd=config.root)
-        if result.code != 0 or not out.is_file():
-            raise ModelError(f"likec4 export json failed:\n{result.stderr or result.stdout}")
-        payload = json.loads(out.read_text(encoding="utf-8"))
-    return parse_likec4(payload)
 
 
 def shape_names(files: list[Path]) -> dict[str, Path]:
@@ -118,15 +39,16 @@ def shape_line(path: Path, curie: str) -> int | None:
 
 @dataclass
 class Models:
-    """Lazily loaded views of both backends, plus the SHACL shapes."""
+    """Lazily loaded vocabulary instances, the LinkML schema and the SHACL shapes."""
 
     config: Config
-    _likec4: Architecture | None = field(default=None, repr=False)
+    _likec4: likec4.Documents | None = field(default=None, repr=False)
 
     @property
-    def likec4(self) -> Architecture:
+    def likec4(self) -> likec4.Documents:
+        """The LikeC4 adapter's instances, keyed by the ``.c4`` file declaring them."""
         if self._likec4 is None:
-            self._likec4 = export_likec4(self.config)
+            self._likec4 = likec4.produce(self.config)
         return self._likec4
 
     @cached_property
@@ -135,30 +57,11 @@ class Models:
 
     @cached_property
     def vocabulary(self) -> Corpus:
-        """Every element and relation as a vocabulary instance; LikeC4's export is translated."""
-        corpus = self.instances
-        likec4 = self.likec4
-        source = self.config.paths["likec4"]
-        return Corpus(
-            elements=likec4.elements | corpus.elements,
-            relations=[*likec4.relations, *corpus.relations],
-            element_files=dict.fromkeys(likec4.elements, source) | corpus.element_files,
-            aliases=corpus.aliases,
-            nodes=corpus.nodes,
-            edges=corpus.edges,
-            findings=corpus.findings,
-            files=corpus.files,
-        )
-
-    @cached_property
-    def architecture(self) -> Architecture:
-        """The vocabulary's elements and relations, plus LikeC4's views."""
-        corpus = self.vocabulary
-        return Architecture(
-            elements=corpus.elements,
-            relations=tuple(corpus.relations),
-            views=self.likec4.views,
-        )
+        """Every producer's instances in one corpus: the adapter's, then the instance files'."""
+        adapted = Corpus()
+        for file, raw in sorted(self.likec4.items()):
+            instances.add(adapted, file, raw)
+        return adapted.merged(self.instances)
 
     @cached_property
     def schema(self) -> SchemaView | None:

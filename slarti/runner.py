@@ -50,7 +50,7 @@ def check(ctx: Context, include_docs: bool = True) -> tuple[Report, bool]:
 
 def _checked(ctx: Context, delegations: int, include_docs: bool) -> int:
     classes = len(ownership.owned_classes(ctx.models))
-    elements = len(ctx.models.architecture.elements)
+    elements = len(ctx.models.vocabulary.elements)
     docs_count = 4 if include_docs else 0
     seams = len(ctx.constraints) + len(ctx.models.shapes)
     inputs = ctx.models.instances.files

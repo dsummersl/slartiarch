@@ -41,8 +41,8 @@ model {
       }
     }
 
-    models = container 'Model adapters' {
-      description 'LikeC4 via export json, vocabulary instance files, LinkML via SchemaView, SHACL via rdflib.'
+    models = container 'Models' {
+      description 'Merges the vocabulary instances of every producer; LinkML via SchemaView, SHACL via rdflib.'
       metadata {
         owns 'Element, Relation'
       }
@@ -67,6 +67,10 @@ model {
       metadata {
         owns 'ProjectPaths'
       }
+    }
+
+    adapters = container 'Adapters' {
+      description 'Built-in producers: LikeC4 via export json, translated into vocabulary instances.'
     }
 
     vocabulary = container 'Vocabulary' {
@@ -114,7 +118,9 @@ model {
   slarti.models -> slarti.vocabulary 'resolves the vocabulary import'
   slarti.docsgen -> slarti.vocabulary 'resolves the vocabulary import'
   slarti.cli -> slarti.vocabulary 'reports the version'
-  slarti.models -> likec4 'export json'
+  slarti.models -> slarti.adapters 'reads instances from'
+  slarti.adapters -> likec4 'export json'
+  slarti.adapters -> slarti.vocabulary 'emits instances of'
   slarti.models -> linkml 'SchemaView'
   slarti.env -> likec4 'probes the version'
   slarti.env -> linkml 'probes the version'
