@@ -289,6 +289,7 @@ Region {
     integer line  
 }
 Relation {
+    string kind  
     string source  
     string target  
     string title  

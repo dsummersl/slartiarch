@@ -6,7 +6,7 @@ description: >-
   structural layer records what a diagram says and knows no methodology. The
   architectural layer is the base a project extends, in its own schema, with the
   kinds of element and relation it means. Import it as `slarti:vocabulary`.
-version: 0.2.0
+version: 0.3.0
 license: Apache-2.0
 prefixes:
   slarti_vocabulary: https://dsummersl.github.io/slarti/vocabulary/
@@ -76,8 +76,19 @@ classes:
         multivalued: true
         inlined_as_list: true
 
+  Disposition:
+    description: >-
+      How a node or edge stands to the architecture: attached to what it depicts,
+      or ignored with a reason. There is no third state.
+    mixin: true
+    attributes:
+      ignored:
+        description: Why the construct depicts nothing in the architecture.
+
   Node:
     description: A box, participant or state drawn in a diagram.
+    mixins:
+      - Disposition
     attributes:
       id:
         description: An identifier unique across the corpus.
@@ -87,9 +98,13 @@ classes:
         range: SourceLocation
         inlined: true
         required: true
+      element:
+        description: The id or an alias of the element the node depicts.
 
   Edge:
     description: A line drawn from one node to another.
+    mixins:
+      - Disposition
     attributes:
       source:
         description: The node the edge starts at.
@@ -104,6 +119,10 @@ classes:
         range: SourceLocation
         inlined: true
         required: true
+      relation:
+        description: >-
+          The kind of relation the edge depicts, between the elements its
+          endpoints depict.
 
   # Architectural layer: what the user means. Projects extend these.
 

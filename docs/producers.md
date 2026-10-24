@@ -45,10 +45,15 @@ diagrams:
     nodes:
       - id: docs/architecture.md#containers/api
         location: {file: docs/architecture.md, line: 14, source_id: api, label: API}
+        element: api      # attached: the id or an alias of the element it depicts
+      - id: docs/architecture.md#containers/legend
+        location: {file: docs/architecture.md, line: 15, label: Legend}
+        ignored: the diagram's key, not part of the system   # or ignored, with a reason
     edges:
       - source: docs/architecture.md#containers/api
         target: docs/architecture.md#containers/db
         location: {file: docs/architecture.md, line: 16, label: reads}
+        relation: Reads   # the kind (or title) of a relation between the endpoints' elements
 elements:
   - id: todo.api          # the permanent identifier the element is resolved by
     kind: Service         # a class in the project schema that is_a Element
@@ -78,6 +83,44 @@ source the producer read rather than at the instance file:
 | `line`      | no       | The line the construct starts on, from 1. Omit it if unknown. |
 | `source_id` | no       | The identifier the construct carries in its own notation.     |
 | `label`     | no       | The text the construct shows when rendered.                   |
+
+## Dispositions
+
+Every node and edge must say how it stands to the architecture. It is either
+**attached** — a node names the element it depicts in `element`, an edge names the
+kind of relation it depicts in `relation` — or **ignored** with a reason in
+`ignored`. There is no third state. An undeclared box is exactly the drift `slarti`
+exists to surface.
+
+A node attaches by an element's `id` or one of its `aliases`, so diagrams can use
+the names they already show. An edge's `relation` must match the `kind` (or title)
+of a relation declared from the element its source node depicts to the element its
+target node depicts.
+
+| ID         | Meaning                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| `ATTACH-1` | A node or edge has no disposition.                                        |
+| `ATTACH-2` | A node or edge is both attached and ignored.                              |
+| `ATTACH-3` | A node or edge is ignored with a blank reason.                            |
+| `IDENT-1`  | An id or alias is declared by more than one element.                      |
+| `IDENT-2`  | A node attaches through a name that resolves to more than one element.    |
+| `DANGLE-1` | A node attaches to a name no element declares.                            |
+| `DANGLE-2` | An edge's relation is not declared between its endpoints' elements.       |
+| `DANGLE-3` | An attached edge ends at a node that is ignored or unattached.            |
+| `DANGLE-4` | An edge ends at a node id no diagram declares.                            |
+| `DRAWN-1`  | An element of a kind that must be drawn appears in no diagram (opt-in).   |
+
+Node and edge findings point at the `location` the producer read, not at the
+instance file. The reverse check is opt-in per element kind: annotate the kind in
+the project schema, and every element of that kind, or of a kind beneath it, must
+be attached to by at least one node.
+
+```yaml
+classes:
+  Service:
+    is_a: Element
+    annotations: {drawn: true}
+```
 
 ## Malformed input
 

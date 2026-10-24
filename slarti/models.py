@@ -143,6 +143,9 @@ class Models:
             elements=likec4.elements | corpus.elements,
             relations=[*likec4.relations, *corpus.relations],
             element_files=dict.fromkeys(likec4.elements, source) | corpus.element_files,
+            aliases=corpus.aliases,
+            nodes=corpus.nodes,
+            edges=corpus.edges,
             findings=corpus.findings,
             files=corpus.files,
         )

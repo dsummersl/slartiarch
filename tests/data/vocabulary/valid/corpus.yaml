@@ -4,12 +4,15 @@ diagrams:
     nodes:
       - id: docs/architecture.md#containers/api
         location: {file: docs/architecture.md, line: 14, source_id: api, label: API}
+        element: api
       - id: docs/architecture.md#containers/db
         location: {file: docs/architecture.md, line: 15, source_id: db, label: Database}
+        element: todo.db
     edges:
       - source: docs/architecture.md#containers/api
         target: docs/architecture.md#containers/db
         location: {file: docs/architecture.md, line: 16, label: reads}
+        relation: Reads
 elements:
   - id: todo.api
     kind: Service

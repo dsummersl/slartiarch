@@ -108,6 +108,49 @@ CHECKS: dict[str, str] = {
         "Remedy: correct the instance so it validates as 'Corpus', or declare the missing "
         "kind in the project schema."
     ),
+    "ATTACH-1": (
+        "A diagram node or edge has no disposition: it is neither attached nor ignored.\n"
+        "Remedy: attach it ('element' on a node, 'relation' on an edge), or give it "
+        "'ignored: <reason>'."
+    ),
+    "ATTACH-2": (
+        "A diagram node or edge is both attached and ignored.\n"
+        "Remedy: keep exactly one of the attachment and 'ignored'."
+    ),
+    "ATTACH-3": (
+        "A diagram node or edge is ignored without a reason.\n"
+        "Remedy: say why it depicts nothing in the architecture, or attach it."
+    ),
+    "IDENT-1": (
+        "A name (an element id or alias) resolves to more than one element.\n"
+        "Remedy: leave the name as the id or an alias of exactly one element."
+    ),
+    "IDENT-2": (
+        "A node attaches through a name that resolves to more than one element.\n"
+        "Remedy: attach the node by an element id, and give each alias to one element."
+    ),
+    "DANGLE-1": (
+        "A node attaches to a name that is not an element id or alias.\n"
+        "Remedy: attach the node to an element that exists, or declare the element."
+    ),
+    "DANGLE-2": (
+        "An edge depicts a relation the architecture does not declare between the "
+        "elements its endpoints depict.\n"
+        "Remedy: declare the relation, or correct the edge's 'relation'."
+    ),
+    "DANGLE-3": (
+        "An attached edge has an endpoint node that is ignored or unattached.\n"
+        "Remedy: attach the endpoint node to an element, or ignore the edge with a reason."
+    ),
+    "DANGLE-4": (
+        "An edge ends at a node id that no diagram declares.\n"
+        "Remedy: point the edge at declared node ids, or add the missing node."
+    ),
+    "DRAWN-1": (
+        "An element of a kind annotated 'drawn: true' appears in no diagram.\n"
+        "Remedy: attach a node in some diagram to the element, or drop the annotation "
+        "from its kind."
+    ),
     "ENV-1": (
         "A delegated tool is missing or outside its supported version range.\n"
         "Remedy: run 'slarti doctor' and install a version inside the range."

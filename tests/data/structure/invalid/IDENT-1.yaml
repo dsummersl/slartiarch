@@ -1,0 +1,13 @@
+# Two elements answer to the alias 'store'.
+elements:
+  - {id: todo.api, kind: Service, name: API, aliases: [api, store]}
+  - {id: todo.db, kind: Database, name: Database, aliases: [store]}
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db}
+diagrams:
+  - id: d
+    location: {file: notes.md, line: 1}
+    nodes:
+      - id: d/api
+        location: {file: notes.md, line: 2}
+        element: todo.api

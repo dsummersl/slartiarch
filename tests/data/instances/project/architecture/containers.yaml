@@ -5,12 +5,15 @@ diagrams:
     nodes:
       - id: notes.md#containers/api
         location: {file: notes.md, line: 5, source_id: api, label: API}
+        element: todo.api
       - id: notes.md#containers/db
         location: {file: notes.md, line: 6, source_id: db, label: Database}
+        element: todo.db
     edges:
       - source: notes.md#containers/api
         target: notes.md#containers/db
         location: {file: notes.md, line: 7, label: reads}
+        relation: Reads
 elements:
   - id: todo.api
     kind: Service
