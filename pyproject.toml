@@ -80,7 +80,7 @@ ignore_errors = true
 
 [tool.vulture]
 # typer registers these as commands; vulture cannot see the decorator.
-ignore_names = ["doctor", "docs_command", "report_command", "_version_callback"]
+ignore_names = ["doctor", "report_command", "_version_callback"]
 # GENERATED: every generated slot looks unused to a caller-graph scan.
 exclude = ["slarti/domain.py"]
 
@@ -93,7 +93,6 @@ shacl_valid = "docs/slarti/data/valid"
 shacl_invalid = "docs/slarti/data/invalid"
 documents = ["docs/architecture.md"]
 mermaid = ["docs/architecture.md"]
-diagrams = "docs/diagrams"
 
 [tool.pytest.ini_options]
 addopts = "--cov=slarti  --cov-report=term-missing"

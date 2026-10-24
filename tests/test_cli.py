@@ -77,6 +77,18 @@ def test_check_reports_findings_and_exits_one(tmp_path: Path, monkeypatch) -> No
     assert "OWN-1" in result.stdout
 
 
+def test_check_fix_regenerates_stale_regions(tmp_path: Path, monkeypatch) -> None:
+    ctx = stub_context(tmp_path)
+    document = ctx.config.document_paths()[0]
+    document.write_text("<!-- slarti:begin unverified -->\n<!-- slarti:end unverified -->\n",
+                        encoding="utf-8")
+    monkeypatch.setattr("slarti.cli._context", lambda: ctx)
+    monkeypatch.setattr(runner, "check", lambda ctx, include_docs=True: (Report(), True))
+    result = RUNNER.invoke(app, ["check", "--fix"])
+    assert result.exit_code == 0
+    assert "Every rule is enforced." in document.read_text(encoding="utf-8")
+
+
 def _report(finding: Finding) -> Report:
     return Report([finding], checked=1)
 

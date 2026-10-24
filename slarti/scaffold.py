@@ -13,7 +13,6 @@ constraints = "docs/slarti/constraints.yaml"
 shacl_valid = "docs/slarti/data/valid"
 shacl_invalid = "docs/slarti/data/invalid"
 documents = ["docs/architecture.md"]
-diagrams = "docs/diagrams"
 """
 
 ARCH = """specification {
@@ -112,7 +111,6 @@ DIRECTORIES = (
     "docs/slarti/shacl",
     "docs/slarti/data/valid",
     "docs/slarti/data/invalid",
-    "docs/diagrams",
 )
 
 

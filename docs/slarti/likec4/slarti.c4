@@ -16,7 +16,7 @@ model {
     description 'Coordinates LikeC4 and LinkML across the joins neither can see.'
 
     cli = container 'CLI' {
-      description 'typer commands: init, doctor, check, docs, report.'
+      description 'typer commands: init, doctor, check, report.'
     }
 
     runner = container 'Runner' {
@@ -96,7 +96,7 @@ model {
     description 'model/arch, model/schema, model/shapes, model/constraints.yaml, docs/architecture.md.'
   }
 
-  architect -> slarti.cli 'runs check and docs'
+  architect -> slarti.cli 'runs check'
   agent -> slarti.cli 'runs check --json and applies remedies'
   agent -> sources 'edits'
   architect -> sources 'edits'

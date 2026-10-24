@@ -29,7 +29,7 @@ classes:
 
 
 def make_config(root: Path) -> Config:
-    for key in ("likec4", "linkml", "shacl", "shacl_valid", "shacl_invalid", "diagrams"):
+    for key in ("likec4", "linkml", "shacl", "shacl_valid", "shacl_invalid"):
         (root / DEFAULTS[key]).mkdir(parents=True, exist_ok=True)
     (root / "docs").mkdir(parents=True, exist_ok=True)
     return Config(root=root, paths=dict(DEFAULTS))

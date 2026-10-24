@@ -44,7 +44,9 @@ def test_slarti_checks_itself() -> None:
 
 @needs_tools
 def test_the_document_does_not_drift() -> None:
-    result = slarti("docs", "--check")
+    result = slarti("check", "--no-docs")
+    assert result.returncode == 0, result.stdout + result.stderr
+    result = slarti("check")
     assert result.returncode == 0, result.stdout + result.stderr
 
 
@@ -56,10 +58,10 @@ def test_check_touches_no_user_authored_file() -> None:
 
 
 @needs_tools
-def test_docs_is_idempotent() -> None:
-    slarti("docs")
+def test_fix_is_idempotent() -> None:
+    slarti("check", "--fix")
     once = digest(("docs",))
-    slarti("docs")
+    slarti("check", "--fix")
     assert digest(("docs",)) == once
 
 

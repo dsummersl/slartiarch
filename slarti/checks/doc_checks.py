@@ -39,18 +39,7 @@ def _stale(file: str, region: str) -> Finding:
         file=file,
         subject=region,
         message=f"generated region '{region}' no longer matches the model it came from.",
-        remedy="Run 'slarti docs' and commit the result.",
-    )
-
-
-def _hand_edited(config: Config, name: str) -> Finding:
-    return Finding(
-        id="DOC-2",
-        severity=Severity.error,
-        file=f"{config.paths['diagrams']}/{name}.mmd",
-        subject=name,
-        message=f"generated diagram '{name}' differs from what the model generates.",
-        remedy="Never hand-edit files under the diagrams directory; run 'slarti docs' instead.",
+        remedy="Run 'slartiarch check --fix' and commit the result.",
     )
 
 
@@ -78,12 +67,6 @@ def _region_findings(file: str, current: str, rendered: docs.Rendered) -> list[F
     return [_stale(file, name) for name in sorted(after) if before.get(name) != after[name]]
 
 
-def _diagram_findings(config: Config, fresh: dict[str, str]) -> list[Finding]:
-    committed = docs.committed_diagrams(config)
-    names = sorted(set(fresh) | set(committed))
-    return [_hand_edited(config, name) for name in names if fresh.get(name) != committed.get(name)]
-
-
 def _table_findings(file: str, constraints: list[Constraint], text: str) -> list[Finding]:
     tables = "".join(r.body for r in inject.regions(text) if r.name in generate.TABLE_REGIONS)
     return [_doc4(file, c.id) for c in constraints if f"| {c.id} |" not in tables]
@@ -103,7 +86,7 @@ def _check_one_doc(
 def _check_existing(
     config: Config, models: Models, constraints: list[Constraint], doc_paths: list[Path],
 ) -> list[Finding]:
-    fresh = generate.diagrams_temp(config)
+    fresh = generate.render_diagrams(config)
     try:
         rendered_docs = docs.render(config, constraints, models, fresh)
     except inject.MarkerError as exc:
@@ -112,7 +95,6 @@ def _check_existing(
     findings: list[Finding] = []
     for doc_path, rendered in zip(doc_paths, rendered_docs, strict=True):
         findings.extend(_check_one_doc(config, doc_path, rendered))
-    findings.extend(_diagram_findings(config, fresh))
     all_tables = "".join(r.text for r in rendered_docs)
     findings.extend(_table_findings(config.rel(doc_paths[0]), constraints, all_tables))
     return findings
@@ -130,7 +112,7 @@ def _missing_doc_findings(config: Config, doc_paths: list[Path]) -> list[Finding
 
 
 def check(config: Config, models: Models, constraints: list[Constraint]) -> list[Finding]:
-    """DOC-1..DOC-4: the document seam — drift, hand-edits, markers, coverage."""
+    """DOC-1, DOC-3, DOC-4: the document seam — drift, markers, coverage."""
     doc_paths = config.document_paths()
     if not doc_paths:
         return []

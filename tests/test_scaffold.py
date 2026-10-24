@@ -19,7 +19,6 @@ def test_init_scaffolds_the_convention(tmp_path: Path) -> None:
     result = scaffold.init(tmp_path)
     assert "slarti.toml" in result.written
     assert (tmp_path / "docs/slarti/likec4/example.c4").is_file()
-    assert (tmp_path / "docs/diagrams").is_dir()
     assert result.skipped == []
 
 

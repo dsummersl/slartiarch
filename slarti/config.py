@@ -16,7 +16,6 @@ DEFAULTS: dict[str, str] = {
     "constraints": "docs/slarti/constraints.yaml",
     "shacl_valid": "docs/slarti/data/valid",
     "shacl_invalid": "docs/slarti/data/invalid",
-    "diagrams": "docs/diagrams",
 }
 
 DOCUMENTS_DEFAULT: list[str] = ["docs/architecture.md"]

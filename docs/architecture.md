@@ -138,7 +138,7 @@ graph TB
   Linkml@{ shape: rectangle, label: "LinkML" }
   Pyshacl@{ shape: rectangle, label: "pyshacl" }
   Sources@{ shape: rectangle, label: "Model sources" }
-  Architect -. "`runs check and docs`" .-> Slarti
+  Architect -. "`runs check`" .-> Slarti
   Architect -. "`edits`" .-> Sources
   Agent -. "`runs check --json and applies remedies`" .-> Slarti
   Agent -. "`edits`" .-> Sources
@@ -183,7 +183,7 @@ graph TB
   Linkml@{ shape: rectangle, label: "LinkML" }
   Likec4@{ shape: rectangle, label: "LikeC4" }
   Sources@{ shape: rectangle, label: "Model sources" }
-  Architect -. "`runs check and docs`" .-> Slarti.Cli
+  Architect -. "`runs check`" .-> Slarti.Cli
   Agent -. "`runs check --json and applies remedies`" .-> Slarti.Cli
   Slarti.Cli -. "`runs the checks`" .-> Slarti.Runner
   Slarti.Cli -. "`regenerates the document`" .-> Slarti.Docsgen
@@ -242,7 +242,7 @@ sequenceDiagram
   participant checks as Checks
   participant models as Models
   participant adapters as Adapters
-  architect->>cli: runs check and docs
+  architect->>cli: runs check
   cli->>env: gates on tool versions
   cli->>runner: runs the checks
   runner->>checks: collects findings
@@ -393,7 +393,7 @@ case, not a failure: each entry must say why enforcement is not possible.
 | --- | --- | --- |
 | U1 | slarti never modifies a user-authored file. | Layer 1 can say which container writes to the sources, not that the write touched only a generated region. Verified instead by a test that hashes every user-authored file before and after each command. |
 | U2 | Running a delegated tool directly produces the same result as running it via slarti. | No model can assert that a subprocess was passed through unaltered. Verified by a test asserting byte-identical diagnostics. |
-| U3 | Generation is idempotent — running slarti docs twice produces identical output. | Idempotence is a property of a run, not of the model. Verified by a test that hashes the tree across two runs. |
+| U3 | Generation is idempotent — running slartiarch check --fix twice produces identical output. | Idempotence is a property of a run, not of the model. Verified by a test that hashes the tree across two runs. |
 | U4 | The Python interfaces the implementation uses are generated from the schema. | No model can assert that a module imports a generated projection rather than a copy of it. Verified instead by a test that regenerates slarti/domain.py from docs/slarti/linkml/slarti.yaml and fails if the committed file differs. |
 
 <!-- slarti:end unverified -->
@@ -414,6 +414,10 @@ case, not a failure: each entry must say why enforcement is not possible.
   `gen-pydantic` into `slarti/domain.py` and committed; behaviour is hand-written
   around them. Two definitions of one entity is the drift `slarti` exists to catch,
   so the schema is the only one, and a stale projection fails the test suite.
+- **ADR-0005 — One command checks the document.** See
+  `docs/adr/0005-one-command-checks-the-document.md`. `slarti check` reports every
+  finding, the document's included; `slarti check --fix` regenerates the generated
+  regions first. Diagrams are no longer committed as separate files.
 
 ## 11. Risks and technical debt
 

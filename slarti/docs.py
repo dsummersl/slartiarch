@@ -42,16 +42,15 @@ def render(
     return [_render_one(p, constraints, models, diagrams) for p in config.document_paths()]
 
 
-def write(config: Config, constraints: list[Constraint], models: Models) -> list[Rendered]:
-    """`slarti docs`: regenerate diagrams and inject every region."""
-    diagrams, _ = generate.diagrams_for(config)
-    rendered_docs = render(config, constraints, models, diagrams)
+def write(config: Config, constraints: list[Constraint], models: Models) -> list[Path]:
+    """`check --fix`: regenerate every region, writing only the documents that changed."""
+    try:
+        rendered_docs = render(config, constraints, models, generate.render_diagrams(config))
+    except inject.MarkerError:
+        return []
+    written = []
     for doc_path, rendered in zip(config.document_paths(), rendered_docs, strict=True):
         if rendered.text and rendered.text != doc_path.read_text(encoding="utf-8"):
             doc_path.write_text(rendered.text, encoding="utf-8")
-    return rendered_docs
-
-
-def committed_diagrams(config: Config) -> dict[str, str]:
-    directory: Path = config.path("diagrams")
-    return {p.stem: p.read_text(encoding="utf-8").strip() for p in sorted(directory.glob("*.mmd"))}
+            written.append(doc_path)
+    return written

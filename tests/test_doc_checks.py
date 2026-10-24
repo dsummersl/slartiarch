@@ -28,7 +28,7 @@ CONSTRAINT = Constraint(
 def prepare(models, text: str = DOCUMENT, diagrams: dict[str, str] | None = None, monkeypatch=None):
     models.config.document_paths()[0].write_text(text, encoding="utf-8")
     fresh = {"index": "graph TB"} if diagrams is None else diagrams
-    monkeypatch.setattr(generate, "diagrams_temp", lambda config: fresh)
+    monkeypatch.setattr(generate, "render_diagrams", lambda config: fresh)
     return fresh
 
 
@@ -42,16 +42,19 @@ def test_a_generated_document_is_clean(models, monkeypatch) -> None:
     fresh = prepare(models, monkeypatch=monkeypatch)
     rendered = docs.render(models.config, [CONSTRAINT], models, fresh)[0]
     models.config.document_paths()[0].write_text(rendered.text, encoding="utf-8")
-    (models.config.path("diagrams") / "index.mmd").write_text("graph TB", encoding="utf-8")
     assert doc_checks.check(models.config, models, [CONSTRAINT]) == []
 
 
-def test_doc2_hand_edited_diagram(models, monkeypatch) -> None:
-    fresh = prepare(models, monkeypatch=monkeypatch)
-    rendered = docs.render(models.config, [CONSTRAINT], models, fresh)[0]
-    models.config.document_paths()[0].write_text(rendered.text, encoding="utf-8")
-    (models.config.path("diagrams") / "index.mmd").write_text("graph LR", encoding="utf-8")
-    assert [f.id for f in doc_checks.check(models.config, models, [CONSTRAINT])] == ["DOC-2"]
+def test_write_fixes_a_stale_region(models, monkeypatch) -> None:
+    prepare(models, monkeypatch=monkeypatch)
+    assert docs.write(models.config, [CONSTRAINT], models) == models.config.document_paths()
+    assert doc_checks.check(models.config, models, [CONSTRAINT]) == []
+    assert docs.write(models.config, [CONSTRAINT], models) == []
+
+
+def test_write_leaves_unbalanced_markers_alone(models, monkeypatch) -> None:
+    prepare(models, "<!-- slarti:begin constraints -->\n", monkeypatch=monkeypatch)
+    assert docs.write(models.config, [CONSTRAINT], models) == []
 
 
 def test_doc3_unknown_region(models, monkeypatch) -> None:

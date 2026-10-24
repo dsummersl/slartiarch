@@ -70,15 +70,17 @@ def ownership_table(models: Models) -> str:
     return _table(["Entity", "Owner", "Owner title"], rows, "No entities are owned.")
 
 
-def render_diagrams(config: Config, outdir: Path) -> dict[str, str]:
-    """Delegate diagram generation to `likec4 codegen mermaid` (I2, §6)."""
+def render_diagrams(config: Config) -> dict[str, str]:
+    """Delegate diagram generation to `likec4 codegen mermaid` (I2, §6), in a temp tree (I1)."""
     if not config.likec4_enabled():
         return {}
-    argv = proc.likec4(["codegen", "mermaid", "-o", str(outdir), str(config.path("likec4"))])
-    result = proc.run(argv, cwd=config.root)
-    if result.code != 0:
-        raise RuntimeError(f"likec4 codegen mermaid failed:\n{result.stderr or result.stdout}")
-    return {p.stem: p.read_text(encoding="utf-8").strip() for p in sorted(outdir.glob("*.mmd"))}
+    with tempfile.TemporaryDirectory() as tmp:
+        outdir = Path(tmp)
+        argv = proc.likec4(["codegen", "mermaid", "-o", tmp, str(config.path("likec4"))])
+        result = proc.run(argv, cwd=config.root)
+        if result.code != 0:
+            raise RuntimeError(f"likec4 codegen mermaid failed:\n{result.stderr or result.stdout}")
+        return {p.stem: p.read_text(encoding="utf-8").strip() for p in sorted(outdir.glob("*.mmd"))}
 
 
 def diagram_block(name: str, diagrams: dict[str, str]) -> str:
@@ -166,15 +168,3 @@ def region_content(
         return diagram_block(region[len(DIAGRAM_PREFIX) :], diagrams)
     return None
 
-
-def diagrams_for(config: Config) -> tuple[dict[str, str], Path]:
-    """Regenerate diagrams into the configured directory, returning their bodies."""
-    outdir = config.path("diagrams")
-    outdir.mkdir(parents=True, exist_ok=True)
-    return render_diagrams(config, outdir), outdir
-
-
-def diagrams_temp(config: Config) -> dict[str, str]:
-    """Regenerate diagrams into a temp tree, touching nothing in the project (I1)."""
-    with tempfile.TemporaryDirectory() as tmp:
-        return render_diagrams(config, Path(tmp))

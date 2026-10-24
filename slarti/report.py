@@ -81,11 +81,7 @@ CHECKS: dict[str, str] = {
     ),
     "DOC-1": (
         "A generated region is stale relative to its source.\n"
-        "Remedy: run 'slarti docs' and commit the result."
-    ),
-    "DOC-2": (
-        "A generated diagram differs from what the model generates — it was hand-edited.\n"
-        "Remedy: never edit files under the diagrams directory; run 'slarti docs'."
+        "Remedy: run 'slartiarch check --fix' and commit the result."
     ),
     "DOC-3": (
         "A region marker is unbalanced, or names a region slarti cannot fill.\n"

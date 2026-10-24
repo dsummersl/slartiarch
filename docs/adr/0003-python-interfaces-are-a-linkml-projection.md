@@ -38,7 +38,7 @@ serialised report is built as the generated `Report`, so `slarti check --json`
 emits the shape the schema declares by construction.
 
 Drift between the schema and the committed projection is a test failure
-(`tests/test_domain.py`), the same gate `slarti docs --check` applies to the
+(`tests/test_domain.py`), the same gate `slartiarch check` applies to the
 document.
 
 ## Consequences
