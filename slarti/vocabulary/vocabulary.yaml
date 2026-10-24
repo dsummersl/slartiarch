@@ -2,7 +2,7 @@ id: https://dsummersl.github.io/slarti/vocabulary
 name: slarti_vocabulary
 title: The slarti vocabulary
 description: >-
-  The data contract every producer of slarti input conforms to (ADR-0004). The
+  The data contract every producer of slarti input conforms to. The
   structural layer records what a diagram says and knows no methodology. The
   architectural layer is the base a project extends, in its own schema, with the
   kinds of element and relation it means. Import it as `slarti:vocabulary`.
