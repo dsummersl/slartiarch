@@ -21,10 +21,14 @@ uv tool install slartiarch
 npm install likec4   # only for projects that keep a LikeC4 model
 ```
 
+Node and LikeC4 are needed only when the project has `*.c4` sources. Without them,
+`slartiarch doctor` reports both as not required, and `check` and `docs` run with `uv` alone.
+
 ## Use
 
 ```bash
-slartiarch init          # scaffold docs/slarti/ and a config
+slartiarch init          # scaffold docs/slarti/ and a config (vocabulary instances)
+slartiarch init --likec4 # scaffold a LikeC4 model instead (needs Node)
 slartiarch doctor        # resolved paths and tool versions
 slartiarch check         # run all validations, stale docs included (CI command)
 slartiarch check --json  # structured output for automation
@@ -41,9 +45,9 @@ rule, enforcer kind, check ID, and remedy.
 ```
 docs/
   architecture.md      prose with generated diagram and table regions
-  diagrams/            GENERATED — never hand-edited
   slarti/
-    likec4/*.c4        LikeC4 architecture model
+    instances/*.yaml   vocabulary instances: elements, relations, diagrams
+    likec4/*.c4        optional LikeC4 architecture model (init --likec4)
     linkml/*.yaml      LinkML domain schemas
     shacl/*.ttl        hand-written SHACL shapes
     constraints.yaml   rule registry
