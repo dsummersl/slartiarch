@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Install the pinned LikeC4
+      - name: Install the pinned LikeC4 and mermaid-cli
         run: npm ci
 
       - name: Install uv
@@ -41,6 +41,9 @@ jobs:
 
       - name: Architecture (slarti dogfoods itself)
         run: make arch
+
+      - name: Render the Mermaid fixtures with mermaid-cli
+        run: make mermaid
 
       - name: Upload code coverage
         if: always()

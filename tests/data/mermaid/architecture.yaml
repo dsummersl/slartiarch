@@ -1,0 +1,14 @@
+# The architecture the Mermaid fixtures attach to. Kinds are compared as written.
+elements:
+  - {id: user, kind: Person, name: User}
+  - {id: todo.api, kind: Service, name: API, aliases: [api]}
+  - {id: todo.worker, kind: Service, name: Worker}
+  - {id: todo.db, kind: Database, name: DB, aliases: [db]}
+  - {id: todo.lists, kind: Table, name: Lists, aliases: [TODO-LIST]}
+  - {id: todo.tasks, kind: Table, name: Tasks}
+relations:
+  - {source: user, target: todo.api, description: uses}
+  - {source: todo.api, target: todo.db, description: reads tasks}
+  - {source: todo.api, target: todo.worker, description: enqueues}
+  - {source: todo.worker, target: todo.db, description: writes tasks}
+  - {source: todo.lists, target: todo.tasks, description: contains}

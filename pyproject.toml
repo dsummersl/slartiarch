@@ -18,6 +18,7 @@ dependencies = [
   "pydantic>=2.11",
   "pyshacl>=0.25",
   "linkml>=1.11,<2",
+  "lark>=1.2",
 ]
 
 [project.urls]
@@ -91,6 +92,7 @@ constraints = "docs/slarti/constraints.yaml"
 shacl_valid = "docs/slarti/data/valid"
 shacl_invalid = "docs/slarti/data/invalid"
 documents = ["docs/architecture.md"]
+mermaid = ["docs/architecture.md"]
 diagrams = "docs/diagrams"
 
 [tool.pytest.ini_options]

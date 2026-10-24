@@ -28,6 +28,7 @@ class Drawn:
     ignored: str | None
     source: str = ""
     target: str = ""
+    kinds: tuple[str, ...] = ()
 
     @property
     def is_edge(self) -> bool:
@@ -173,6 +174,7 @@ def _drawn(raw: dict[str, Any], identifier: str, attachment: str) -> Drawn:
         ignored=_optional(raw, "ignored"),
         source=str(raw.get("source", "")),
         target=str(raw.get("target", "")),
+        kinds=tuple(str(k) for k in raw.get("element_kinds") or []),
     )
 
 

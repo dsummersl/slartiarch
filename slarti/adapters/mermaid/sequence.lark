@@ -1,0 +1,39 @@
+// The supported subset of Mermaid sequence diagrams. Anything else is a finding.
+
+start: _NL? "sequenceDiagram" _NL _statement*
+
+_statement: participant _NL
+          | actor _NL
+          | message _NL
+          | note _NL
+          | activation _NL
+          | "autonumber" _NL
+          | title _NL
+          | loop | opt | brk | rect | alt | par | critical
+
+participant: "participant" ID (_AS LABEL)?
+actor: "actor" ID (_AS LABEL)?
+message: ID ARROW ID ":" TEXT
+note: NOTE PLACEMENT ID ("," ID)? ":" TEXT
+activation: ("activate" | "deactivate") ID
+title: "title" REST?
+
+loop: "loop" REST? _NL _statement* "end" _NL
+opt: "opt" REST? _NL _statement* "end" _NL
+brk: "break" REST? _NL _statement* "end" _NL
+rect: "rect" REST? _NL _statement* "end" _NL
+alt: "alt" REST? _NL _statement* ("else" REST? _NL _statement*)* "end" _NL
+par: "par" REST? _NL _statement* ("and" REST? _NL _statement*)* "end" _NL
+critical: "critical" REST? _NL _statement* ("option" REST? _NL _statement*)* "end" _NL
+
+_AS.2: /as\b/
+NOTE.2: /note\b/i
+PLACEMENT.2: /(left of|right of|over)\b/i
+ID: /[A-Za-z_][A-Za-z0-9_.]*/
+ARROW: /--?(>>|>|x|\))[+-]?/
+LABEL: /[^\n;#]+/
+TEXT: /[^\n;#]+/
+REST: /[^\n;#]+/
+_NL: /(\r?\n[\t ]*)+/
+
+%ignore /[\t ]+/

@@ -1,0 +1,24 @@
+---
+title: Reading tasks
+---
+sequenceDiagram
+  %% Participants attach by directive: sequence diagrams have no classes.
+  %% slarti: attach user user
+  %% slarti: attach api todo.api
+  %% slarti: alias store db
+  %% slarti: attach store store
+  %% slarti: ignore api -> user a reply, which depicts no relation
+  %% slarti: ignore store -> api a reply, which depicts no relation
+  actor user as User
+  participant api as API
+  participant store as Task store
+  autonumber
+  user->>api: uses
+  activate api
+  loop every list
+    api->>+store: reads tasks
+    store-->>-api: rows
+  end
+  Note over api,store: one query per list
+  api-->>user: the lists
+  deactivate api

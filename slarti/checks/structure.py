@@ -113,6 +113,32 @@ def _node_attachment(node: Drawn, names: Names) -> Finding | None:
     )
 
 
+def _lineage(models: Models, kind: str) -> list[str]:
+    """A kind and, when the project schema declares it, every kind above it."""
+    view = models.schema
+    if view is None or view.get_class(kind) is None:
+        return [kind]
+    return list(view.class_ancestors(kind))
+
+
+def _node_kind(node: Drawn, names: Names, models: Models) -> Finding | None:
+    """KIND-1: a node that names its element's kind depicts an element of that kind."""
+    element = names.element(node.attaches_to)
+    if not node.attached or not node.kinds or element is None:
+        return None
+    kind = models.vocabulary.elements[element].kind
+    if set(node.kinds) & set(_lineage(models, kind)):
+        return None
+    return _at(
+        node,
+        "KIND-1",
+        f"node '{node.id}' is drawn as {_quoted(list(node.kinds))}, but element "
+        f"'{element}' is a '{kind}'.",
+        f"Draw node '{node.id}' as '{kind}', or attach it to an element of the kind it "
+        "is drawn as.",
+    )
+
+
 def _quoted(names: list[str]) -> str:
     return ", ".join(repr(n) for n in names)
 
@@ -235,18 +261,27 @@ def _undrawn(models: Models, corpus: Corpus, names: Names) -> list[Finding]:
     ]
 
 
-def _drawn_findings(corpus: Corpus, names: Names) -> list[Finding | None]:
+def _node_findings(models: Models, names: Names) -> list[Finding | None]:
+    nodes = models.vocabulary.nodes
+    return [
+        *(_node_attachment(n, names) for n in nodes),
+        *(_node_kind(n, names, models) for n in nodes),
+    ]
+
+
+def _drawn_findings(models: Models, names: Names) -> list[Finding | None]:
+    corpus = models.vocabulary
     nodes = {n.id: n for n in corpus.nodes}
     return [
         *(_disposition(d) for d in [*corpus.nodes, *corpus.edges]),
-        *(_node_attachment(n, names) for n in corpus.nodes),
+        *_node_findings(models, names),
         *(_edge_attachment(e, nodes, names, corpus) for e in corpus.edges),
     ]
 
 
 def check(models: Models) -> list[Finding]:
-    """ATTACH-*, IDENT-*, DANGLE-*, DRAWN-1: diagrams against the architecture, both ways."""
+    """ATTACH-*, IDENT-*, DANGLE-*, DRAWN-1, KIND-1: diagrams against the architecture."""
     corpus = models.vocabulary
     names = Names.of(corpus)
-    found = [f for f in _drawn_findings(corpus, names) if f is not None]
+    found = [f for f in _drawn_findings(models, names) if f is not None]
     return [*found, *_ambiguous_names(corpus, names), *_undrawn(models, corpus, names)]

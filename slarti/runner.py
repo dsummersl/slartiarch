@@ -39,6 +39,7 @@ def check(ctx: Context, include_docs: bool = True) -> tuple[Report, bool]:
         report.extend(malformed)
         report.checked = len(delegations) + ctx.models.instances.files
         return report, delegated_ok
+    report.extend(ctx.models.mermaid.findings)
     report.extend(ownership.check(ctx.models))
     report.extend(structure.check(ctx.models))
     report.extend(registry_checks.check(ctx.config, ctx.models, ctx.constraints))
@@ -53,6 +54,6 @@ def _checked(ctx: Context, delegations: int, include_docs: bool) -> int:
     elements = len(ctx.models.vocabulary.elements)
     docs_count = 4 if include_docs else 0
     seams = len(ctx.constraints) + len(ctx.models.shapes)
-    inputs = ctx.models.instances.files
+    inputs = ctx.models.instances.files + ctx.models.mermaid.diagrams
     drawn = len(ctx.models.vocabulary.nodes) + len(ctx.models.vocabulary.edges)
     return delegations + inputs + classes + elements + drawn + seams + docs_count

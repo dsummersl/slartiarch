@@ -20,8 +20,8 @@ graph TB
   end
   Pyshacl@{ shape: rectangle, label: "pyshacl" }
   Linkml@{ shape: rectangle, label: "LinkML" }
-  Sources@{ shape: rectangle, label: "Model sources" }
   Likec4@{ shape: rectangle, label: "LikeC4" }
+  Sources@{ shape: rectangle, label: "Model sources" }
   Architect -. "`runs check and docs`" .-> Slarti.Cli
   Agent -. "`runs check --json and applies remedies`" .-> Slarti.Cli
   Slarti.Cli -. "`runs the checks`" .-> Slarti.Runner
@@ -49,3 +49,4 @@ graph TB
   Slarti.Env -. "`probes the version`" .-> Likec4
   Slarti.Env -. "`probes the version`" .-> Linkml
   Slarti.Adapters -. "`export json`" .-> Likec4
+  Slarti.Adapters -. "`parses Mermaid diagrams in`" .-> Sources

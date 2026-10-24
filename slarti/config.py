@@ -22,7 +22,7 @@ DEFAULTS: dict[str, str] = {
 DOCUMENTS_DEFAULT: list[str] = ["docs/architecture.md"]
 
 # Path keys whose value is a list of paths rather than a single path.
-LIST_KEYS = ("documents", "instances")
+LIST_KEYS = ("documents", "instances", "mermaid")
 
 
 class ConfigError(Exception):
@@ -37,6 +37,7 @@ class Config:
     paths: dict[str, str] = field(default_factory=lambda: dict(DEFAULTS))
     documents: list[str] = field(default_factory=lambda: list(DOCUMENTS_DEFAULT))
     instances: list[str] = field(default_factory=list)
+    mermaid: list[str] = field(default_factory=list)
 
     def path(self, key: str) -> Path:
         return self.root / self.paths[key]
@@ -45,6 +46,10 @@ class Config:
         """The LikeC4 adapter runs only when its directory holds a ``*.c4`` source."""
         directory = self.path("likec4")
         return directory.is_dir() and any(directory.rglob("*.c4"))
+
+    def mermaid_enabled(self) -> bool:
+        """The Mermaid adapter runs only when the config names Mermaid inputs."""
+        return bool(self.mermaid)
 
     def instance_paths(self) -> list[Path]:
         return [self.root / i for i in self.instances]
@@ -93,9 +98,10 @@ def _from_raw(root: Path, raw: dict[str, Any], source_label: str) -> Config:
         raise ConfigError(f"Unknown path keys in {source_label}: {', '.join(unknown)}")
     docs = _merge_list(configured.get("documents"), DOCUMENTS_DEFAULT)
     instances = _merge_list(configured.get("instances"), [])
+    mermaid = _merge_list(configured.get("mermaid"), [])
     path_keys = {k: str(v) for k, v in configured.items() if k not in LIST_KEYS}
     paths = dict(DEFAULTS) | path_keys
-    return Config(root=root, paths=paths, documents=docs, instances=instances)
+    return Config(root=root, paths=paths, documents=docs, instances=instances, mermaid=mermaid)
 
 
 def _merge_list(raw: Any, default: list[str]) -> list[str]:

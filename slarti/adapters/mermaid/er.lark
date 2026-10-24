@@ -1,0 +1,37 @@
+// The supported subset of Mermaid entity-relationship diagrams. Anything else is a finding.
+
+start: _NL? "erDiagram" _NL _statement*
+
+_statement: entity_block
+          | entity _NL
+          | relationship _NL
+          | class_assign _NL
+          | class_def _NL
+          | style _NL
+          | direction _NL
+
+entity_block: entity "{" _NL? attribute* "}" _NL
+entity: NAME label? (":::" CLASS)?
+label: "[" (STRING | LABEL) "]"
+attribute: TYPE ATTRIBUTE keys? STRING? _NL
+keys: KEY ("," KEY)*
+relationship: NAME RELATIONSHIP NAME ":" (STRING | WORD)
+class_assign: "class" NAME ("," NAME)* CLASS
+class_def: "classDef" CLASS ("," CLASS)* REST
+style: "style" NAME ("," NAME)* REST
+direction: "direction" DIRECTION
+
+NAME: /[A-Za-z_][A-Za-z0-9_-]*/
+CLASS: /[A-Za-z_][A-Za-z0-9_-]*/
+WORD: /[A-Za-z_][A-Za-z0-9_-]*/
+TYPE: /[A-Za-z_][A-Za-z0-9_\-\[\]()~]*/
+ATTRIBUTE: /\*?[A-Za-z_][A-Za-z0-9_\-\[\]()]*/
+KEY: "PK" | "FK" | "UK"
+STRING: /"[^"\n]*"/
+LABEL: /[^\]"\s]+/
+RELATIONSHIP: /(\|o|\|\||\}o|\}\|)(--|\.\.)(o\||\|\||o\{|\|\{)/
+DIRECTION: "TB" | "BT" | "LR" | "RL"
+REST: /[^,\s][^\n]*/
+_NL: /(\r?\n[\t ]*)+/
+
+%ignore /[\t ]+/

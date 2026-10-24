@@ -6,7 +6,7 @@ description: >-
   structural layer records what a diagram says and knows no methodology. The
   architectural layer is the base a project extends, in its own schema, with the
   kinds of element and relation it means. Import it as `slarti:vocabulary`.
-version: 0.3.0
+version: 0.4.0
 license: Apache-2.0
 prefixes:
   slarti_vocabulary: https://dsummersl.github.io/slarti/vocabulary/
@@ -93,6 +93,12 @@ classes:
       id:
         description: An identifier unique across the corpus.
         identifier: true
+      kind:
+        description: >-
+          The structural class of the node, such as Participant or Entity, when
+          the notation says more than that it is a node.
+        designates_type: true
+        range: string
       location:
         description: Where the node was written.
         range: SourceLocation
@@ -100,12 +106,23 @@ classes:
         required: true
       element:
         description: The id or an alias of the element the node depicts.
+      element_kinds:
+        description: >-
+          The element kinds the notation says the depicted element is one of,
+          such as the classes a Mermaid node is assigned.
+        multivalued: true
 
   Edge:
     description: A line drawn from one node to another.
     mixins:
       - Disposition
     attributes:
+      kind:
+        description: >-
+          The structural class of the edge, such as Message or
+          EntityRelationship, when the notation says more than that it is an edge.
+        designates_type: true
+        range: string
       source:
         description: The node the edge starts at.
         range: Node
@@ -123,6 +140,72 @@ classes:
         description: >-
           The kind of relation the edge depicts, between the elements its
           endpoints depict.
+
+  # Sequence diagrams.
+
+  Participant:
+    description: A lifeline in a sequence diagram.
+    is_a: Node
+    attributes:
+      actor:
+        description: Drawn as a person rather than a box.
+        range: boolean
+
+  Message:
+    description: A message one participant sends another, in the order the diagram sends it.
+    is_a: Edge
+    attributes:
+      order:
+        description: The message's position among the diagram's messages, from 1.
+        range: integer
+        minimum_value: 1
+        required: true
+      arrow:
+        description: The arrow as written, which says whether the message is a call or a reply.
+
+  # Entity-relationship diagrams.
+
+  Entity:
+    description: An entity in an entity-relationship diagram.
+    is_a: Node
+    attributes:
+      attributes:
+        description: The attributes the diagram lists for the entity.
+        range: EntityAttribute
+        multivalued: true
+        inlined_as_list: true
+
+  EntityAttribute:
+    description: One attribute of an entity, as an entity-relationship diagram lists it.
+    attributes:
+      name:
+        description: What the attribute is called.
+        required: true
+      type:
+        description: The attribute's type, as written.
+        required: true
+      keys:
+        description: The keys the attribute takes part in.
+        range: EntityKey
+        multivalued: true
+      comment:
+        description: The comment written beside the attribute.
+
+  EntityRelationship:
+    description: A relationship between two entities, with the cardinality at each end.
+    is_a: Edge
+    attributes:
+      source_cardinality:
+        description: How many of the source entity one target entity relates to.
+        range: Cardinality
+        required: true
+      target_cardinality:
+        description: How many of the target entity one source entity relates to.
+        range: Cardinality
+        required: true
+      identifying:
+        description: Whether the target cannot exist without the source (a solid line).
+        range: boolean
 
   # Architectural layer: what the user means. Projects extend these.
 
@@ -167,3 +250,26 @@ classes:
         required: true
       description:
         description: What the relation means.
+
+enums:
+  Cardinality:
+    description: How many instances one end of an entity relationship admits.
+    permissible_values:
+      zero_or_one:
+        description: At most one.
+      exactly_one:
+        description: Exactly one.
+      zero_or_more:
+        description: Any number, including none.
+      one_or_more:
+        description: At least one.
+
+  EntityKey:
+    description: A key an entity attribute takes part in.
+    permissible_values:
+      PK:
+        description: Primary key.
+      FK:
+        description: Foreign key.
+      UK:
+        description: Unique key.
