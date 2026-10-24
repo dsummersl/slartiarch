@@ -6,27 +6,6 @@ from slarti import models as models_module
 from slarti import report
 from tests.conftest import make_models
 
-PAYLOAD = {
-    "elements": {
-        "todo.db": {
-            "id": "todo.db",
-            "title": "DB",
-            "kind": "container",
-            "metadata": {"owns": "Task, TodoList"},
-        },
-        "todo": {"id": "todo", "title": "Todo", "kind": "system"},
-    },
-    "relations": {
-        "r1": {
-            "id": "r1",
-            "title": "reads",
-            "source": {"model": "todo"},
-            "target": {"model": "todo.db"},
-        },
-    },
-    "views": {"index": {}},
-}
-
 SHAPE = """@prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix todo: <https://example.org/todo/> .
 
@@ -37,23 +16,15 @@ todo:UniqueMembership
 """
 
 
-def test_export_payload_is_parsed_and_sorted() -> None:
-    model = models_module.parse_likec4(PAYLOAD)
-    assert list(model.elements) == ["todo", "todo.db"]
-    assert model.elements["todo.db"].owns == ["Task", "TodoList"]
-    assert model.has_relation("todo", "todo.db")
-    assert not model.has_relation("todo.db", "todo")
-    assert model.views == ("index",)
-
-
 def test_likec4_reaches_checks_only_as_vocabulary_instances(tmp_path: Path) -> None:
     models = make_models(tmp_path)
     corpus = models.vocabulary
     assert sorted(corpus.elements) == ["todo", "todo.api", "todo.db"]
-    assert corpus.element_files["todo.api"] == models.config.paths["likec4"]
+    assert corpus.element_files["todo.api"] == models.config.paths["likec4"] + "/todo.c4"
     assert corpus.owners_of("Task") == ["todo.api"]
     assert corpus.owners_of("Ghost") == []
-    assert models.architecture.elements == corpus.elements
+    assert corpus.has_relation("todo.api", "todo.db")
+    assert not corpus.has_relation("todo.db", "todo.api")
 
 
 def test_shape_names_are_curies(tmp_path: Path) -> None:

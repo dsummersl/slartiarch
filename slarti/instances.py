@@ -55,6 +55,22 @@ class Corpus:
     def owners_of(self, entity: str) -> list[str]:
         return sorted(e.id for e in self.elements.values() if entity in (e.owns or []))
 
+    def has_relation(self, source: str, target: str) -> bool:
+        return any(r.source == source and r.target == target for r in self.relations)
+
+    def merged(self, other: Corpus) -> Corpus:
+        """This corpus with another's instances added; the other's element wins on a shared id."""
+        return Corpus(
+            elements=self.elements | other.elements,
+            relations=[*self.relations, *other.relations],
+            element_files=self.element_files | other.element_files,
+            aliases=self.aliases | other.aliases,
+            nodes=[*self.nodes, *other.nodes],
+            edges=[*self.edges, *other.edges],
+            findings=[*self.findings, *other.findings],
+            files=self.files + other.files,
+        )
+
 
 def files_for(path: Path) -> list[Path]:
     """The instance files a configured path names: the file, or a directory's files."""
@@ -180,9 +196,10 @@ def _listed(raw: dict[str, Any], key: str) -> list[dict[str, Any]]:
     return list(raw.get(key) or [])
 
 
-def _add(corpus: Corpus, config: Config, path: Path, raw: dict[str, Any]) -> None:
+def add(corpus: Corpus, file: str, raw: dict[str, Any]) -> None:
+    """Add one vocabulary instance, read from ``file``, to the corpus."""
     for element in _listed(raw, "elements"):
-        _add_element(corpus, config.rel(path), element)
+        _add_element(corpus, file, element)
     corpus.relations.extend(_relation(r) for r in _listed(raw, "relations"))
     for diagram in _listed(raw, "diagrams"):
         _add_diagram(corpus, diagram)
@@ -199,7 +216,7 @@ def _load_file(corpus: Corpus, config: Config, path: Path, view: SchemaView) -> 
     findings = [unreadable] if unreadable else _findings(config, path, raw or {}, view)
     corpus.findings.extend(findings)
     if not findings and raw is not None:
-        _add(corpus, config, path, raw)
+        add(corpus, config.rel(path), raw)
 
 
 def load(config: Config) -> Corpus:

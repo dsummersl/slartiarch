@@ -56,8 +56,11 @@ LikeC4 owns *the boxes and arrows*: elements, containment, relationships, views.
   the whole model as JSON (`likec4 export json`).
 - **Not responsible for.** Anything about an instance of data. LikeC4 has no notion
   of a field, a type or a cardinality.
-- **How `slarti` uses it.** Only the model adapters shell out to it (D5, D6). The
-  export feeds the ownership seam and every layer-1 enforcer; `likec4 codegen`
+- **How `slarti` uses it.** Only the LikeC4 adapter shells out to it (D5, D6). The
+  adapter translates the export into vocabulary instances: elements and relations,
+  and each view as a diagram whose nodes and edges carry a `SourceLocation` in the
+  `.c4` source. No check reads the export itself; the ownership seam, the diagram
+  checks and every layer-1 enforcer run on those instances. `likec4 codegen`
   produces the diagrams that the document generator injects (D9).
 
 ### 2.3 LinkML — the schema layer
@@ -168,13 +171,14 @@ graph TB
     Slarti.Checks@{ shape: rectangle, label: "Checks" }
     Slarti.Registry@{ shape: rectangle, label: "Registry" }
     Slarti.Findings@{ shape: rectangle, label: "Findings" }
-    Slarti.Models@{ shape: rectangle, label: "Model adapters" }
+    Slarti.Models@{ shape: rectangle, label: "Models" }
+    Slarti.Adapters@{ shape: rectangle, label: "Adapters" }
     Slarti.Vocabulary@{ shape: rectangle, label: "Vocabulary" }
   end
   Pyshacl@{ shape: rectangle, label: "pyshacl" }
-  Likec4@{ shape: rectangle, label: "LikeC4" }
   Linkml@{ shape: rectangle, label: "LinkML" }
   Sources@{ shape: rectangle, label: "Model sources" }
+  Likec4@{ shape: rectangle, label: "LikeC4" }
   Architect -. "`runs check and docs`" .-> Slarti.Cli
   Agent -. "`runs check --json and applies remedies`" .-> Slarti.Cli
   Slarti.Cli -. "`runs the checks`" .-> Slarti.Runner
@@ -188,18 +192,20 @@ graph TB
   Slarti.Checks -. "`emits findings`" .-> Slarti.Findings
   Slarti.Checks -. "`reads both models`" .-> Slarti.Models
   Slarti.Docsgen -. "`reads the rules`" .-> Slarti.Registry
+  Slarti.Models -. "`reads instances from`" .-> Slarti.Adapters
   Slarti.Models -. "`resolves the vocabulary import`" .-> Slarti.Vocabulary
   Slarti.Docsgen -. "`reads the model`" .-> Slarti.Models
   Slarti.Docsgen -. "`resolves the vocabulary import`" .-> Slarti.Vocabulary
+  Slarti.Adapters -. "`emits instances of`" .-> Slarti.Vocabulary
   Slarti.Checks -. "`validates one negative fixture per rule`" .-> Pyshacl
   Slarti.Registry -. "`reads`" .-> Sources
-  Slarti.Models -. "`export json`" .-> Likec4
   Slarti.Models -. "`SchemaView`" .-> Linkml
   Slarti.Models -. "`reads`" .-> Sources
   Slarti.Docsgen -. "`delegates diagram generation`" .-> Likec4
   Slarti.Docsgen -. "`writes generated regions only`" .-> Sources
   Slarti.Env -. "`probes the version`" .-> Likec4
   Slarti.Env -. "`probes the version`" .-> Linkml
+  Slarti.Adapters -. "`export json`" .-> Likec4
 ```
 
 <!-- slarti:end diagram:containers -->
@@ -216,13 +222,13 @@ a dangling pointer and an unclaimed target are different failures.
 | Entity | Owner | Owner title |
 | --- | --- | --- |
 | Constraint | `slarti.registry` | Registry |
-| Element | `slarti.models` | Model adapters |
+| Element | `slarti.models` | Models |
 | Enforcer | `slarti.registry` | Registry |
 | Finding | `slarti.findings` | Findings |
 | Probe | `slarti.env` | Environment gate |
 | ProjectPaths | `slarti.settings` | Config |
 | Region | `slarti.docsgen` | Document generator |
-| Relation | `slarti.models` | Model adapters |
+| Relation | `slarti.models` | Models |
 | Report | `slarti.findings` | Findings |
 | Summary | `slarti.findings` | Findings |
 

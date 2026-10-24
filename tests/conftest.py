@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pytest
 
+from slarti.adapters.likec4 import Documents
 from slarti.config import DEFAULTS, Config
-from slarti.models import Architecture, Element, Models, Relation
+from slarti.models import Models
 
 SCHEMA = """id: https://example.org/example
 name: example
@@ -34,14 +35,14 @@ def make_config(root: Path) -> Config:
     return Config(root=root, paths=dict(DEFAULTS))
 
 
-def make_model(owns: tuple[str, ...] = ("Task",)) -> Architecture:
-    elements = {
-        "todo": Element(id="todo", title="Todo", kind="system", owns=[]),
-        "todo.api": Element(id="todo.api", title="API", kind="container", owns=list(owns)),
-        "todo.db": Element(id="todo.db", title="DB", kind="container", owns=[]),
-    }
-    relations = (Relation(source="todo.api", target="todo.db", title="reads"),)
-    return Architecture(elements=elements, relations=relations, views=("index",))
+def make_model(owns: tuple[str, ...] = ("Task",)) -> Documents:
+    elements = [
+        {"id": "todo", "name": "Todo", "kind": "system", "owns": []},
+        {"id": "todo.api", "name": "API", "kind": "container", "owns": list(owns)},
+        {"id": "todo.db", "name": "DB", "kind": "container", "owns": []},
+    ]
+    relations = [{"source": "todo.api", "target": "todo.db", "description": "reads"}]
+    return {DEFAULTS["likec4"] + "/todo.c4": {"elements": elements, "relations": relations}}
 
 
 def make_models(root: Path, schema: str = SCHEMA, owns: tuple[str, ...] = ("Task",)) -> Models:
