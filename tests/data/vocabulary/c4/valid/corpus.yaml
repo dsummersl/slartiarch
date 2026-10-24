@@ -1,0 +1,34 @@
+elements:
+  - id: shop.customer
+    kind: Person
+    name: Customer
+  - id: shop
+    kind: SoftwareSystem
+    name: Shop
+  - id: shop.payments
+    kind: SoftwareSystem
+    name: Payment provider
+    external: true
+  - id: shop.api
+    kind: Container
+    name: API
+    system: shop
+    technology: python
+  - id: shop.db
+    kind: Database
+    name: Orders database
+    system: shop
+    technology: postgres
+  - id: shop.api.checkout
+    kind: Component
+    name: Checkout
+    container: shop.api
+relations:
+  - kind: Relationship
+    source: shop.customer
+    target: shop.api
+    description: Places orders.
+    technology: https
+  - kind: Relationship
+    source: shop.api.checkout
+    target: shop.payments

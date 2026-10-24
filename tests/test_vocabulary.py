@@ -78,4 +78,5 @@ def test_report_json_carries_the_vocabulary_version(tmp_path: Path, monkeypatch)
     ctx = stub_context(tmp_path, constraints=[])
     monkeypatch.setattr("slarti.cli._context", lambda: ctx)
     payload = json.loads(CliRunner().invoke(app, ["report", "--json"]).stdout)
-    assert payload["vocabulary"] == {"import": "slarti:vocabulary", "version": vocabulary.version()}
+    assert payload["vocabulary"]["import"] == "slarti:vocabulary"
+    assert payload["vocabulary"]["version"] == vocabulary.version()

@@ -1,0 +1,4 @@
+elements:
+  - id: shop.api.checkout
+    kind: Component
+    name: Checkout

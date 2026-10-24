@@ -137,6 +137,9 @@ def doctor() -> None:
         typer.echo(f"     {probe.detail}")
     typer.echo(f"ok   {'vocabulary':8} {vocabulary.version():10} {vocabulary.SCHEMA}")
     typer.echo(f"     import as '{vocabulary.IMPORT}' from a project schema")
+    for name, profile in vocabulary.profile_versions().items():
+        typer.echo(f"ok   {'profile':8} {profile:10} {vocabulary.PROFILES[name]}")
+        typer.echo(f"     optional; import as '{name}' from a project schema")
     failed = any(not p.ok for p in probes)
     raise typer.Exit(EXIT_ENVIRONMENT if failed else EXIT_CLEAN)
 
