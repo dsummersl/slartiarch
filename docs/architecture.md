@@ -206,8 +206,9 @@ graph TB
 
 ## 6. The ownership seam
 
-Every entity in the schema names the container that owns it, and every container
-claims its entities back. Both directions are checked (`OWN-1`..`OWN-5`), because
+Every entity in the schema names the architectural element that owns it, and every
+element claims its entities back. The check reads vocabulary `Element` instances, so
+it holds the same for LikeC4, hand-written instances or any other producer. Both directions are checked (`OWN-1`..`OWN-5`), because
 a dangling pointer and an unclaimed target are different failures.
 
 <!-- slarti:begin ownership -->

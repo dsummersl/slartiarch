@@ -15,6 +15,7 @@ from rdflib.term import URIRef
 from slarti import instances, proc, vocabulary
 from slarti.config import Config
 from slarti.domain import Element, Relation
+from slarti.instances import Corpus
 
 
 class ModelError(Exception):
@@ -31,9 +32,6 @@ class Architecture:
 
     def has_relation(self, source: str, target: str) -> bool:
         return any(r.source == source and r.target == target for r in self.relations)
-
-    def owners_of(self, entity: str) -> list[str]:
-        return sorted(e.id for e in self.elements.values() if entity in (e.owns or []))
 
 
 def _parse_owns(metadata: dict[str, str]) -> list[str]:
@@ -136,18 +134,28 @@ class Models:
         return instances.load(self.config)
 
     @cached_property
-    def architecture(self) -> Architecture:
-        """LikeC4's elements and relations merged with every instance file's."""
+    def vocabulary(self) -> Corpus:
+        """Every element and relation as a vocabulary instance; LikeC4's export is translated."""
         corpus = self.instances
-        return Architecture(
-            elements=self.likec4.elements | corpus.elements,
-            relations=self.likec4.relations + tuple(corpus.relations),
-            views=self.likec4.views,
+        likec4 = self.likec4
+        source = self.config.paths["likec4"]
+        return Corpus(
+            elements=likec4.elements | corpus.elements,
+            relations=[*likec4.relations, *corpus.relations],
+            element_files=dict.fromkeys(likec4.elements, source) | corpus.element_files,
+            findings=corpus.findings,
+            files=corpus.files,
         )
 
-    def element_file(self, element_id: str) -> str:
-        """The file that declares an element: its instance file, or the LikeC4 sources."""
-        return self.instances.element_files.get(element_id, self.config.paths["likec4"])
+    @cached_property
+    def architecture(self) -> Architecture:
+        """The vocabulary's elements and relations, plus LikeC4's views."""
+        corpus = self.vocabulary
+        return Architecture(
+            elements=corpus.elements,
+            relations=tuple(corpus.relations),
+            views=self.likec4.views,
+        )
 
     @cached_property
     def schema(self) -> SchemaView | None:

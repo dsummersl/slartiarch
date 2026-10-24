@@ -51,7 +51,7 @@ def absent_relation_violated(models: Models, ref: str) -> bool:
 
 def _ownership_holds(models: Models, ref: str) -> bool:
     owner = models.class_annotation(ref, "owner")
-    return owner is not None and owner in models.architecture.elements
+    return owner is not None and owner in models.vocabulary.elements
 
 
 RESOLVERS: dict[str, Callable[[Models, str], bool]] = {

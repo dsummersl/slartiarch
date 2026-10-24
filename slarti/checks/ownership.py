@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from slarti.findings import Finding, Severity
-from slarti.models import Architecture, Models
+from slarti.instances import Corpus
+from slarti.models import Models
 
 OWNER_ANNOTATION = "owner"
 
@@ -14,7 +15,7 @@ def _is_owned(cls: object, schema_ids: set[str]) -> bool:
 
 
 def owned_classes(models: Models) -> list[str]:
-    """Concrete schema classes that must declare an owning container.
+    """Concrete schema classes that must declare an owning element.
 
     ``imports=True`` lets classes split across multiple files be visible;
     the ``linkml:types`` namespace and other truly-imported schemas are
@@ -36,8 +37,8 @@ def _missing_owner(name: str, schema_file: str) -> Finding:
         subject=name,
         message=f"class '{name}' has no owner.",
         remedy=(
-            f"Add 'annotations: {{owner: <likec4-element-id>}}' to class '{name}', "
-            "and list the class under that element's 'owns' metadata."
+            f"Add 'annotations: {{owner: <element-id>}}' to class '{name}', "
+            "and list the class in that element's 'owns'."
         ),
     )
 
@@ -48,8 +49,14 @@ def _unknown_owner(name: str, owner: str, schema_file: str) -> Finding:
         severity=Severity.error,
         file=schema_file,
         subject=name,
-        message=f"class '{name}' names owner '{owner}', which is not an element in the model.",
-        remedy=f"Point '{name}' at an element that exists, or add element '{owner}' to the model.",
+        message=(
+            f"class '{name}' names owner '{owner}', "
+            "which is not an element in the architecture."
+        ),
+        remedy=(
+            f"Point '{name}' at an element that exists, "
+            f"or declare element '{owner}' in the architecture."
+        ),
     )
 
 
@@ -60,42 +67,42 @@ def _unclaimed(name: str, owner: str, schema_file: str) -> Finding:
         file=schema_file,
         subject=name,
         message=f"class '{name}' names owner '{owner}', but '{owner}' does not claim it.",
-        remedy=f"Add '{name}' to the 'owns' metadata of element '{owner}'.",
+        remedy=f"Add '{name}' to the 'owns' of element '{owner}'.",
     )
 
 
-def _class_findings(models: Models, model: Architecture) -> list[Finding]:
+def _class_findings(models: Models, corpus: Corpus) -> list[Finding]:
     findings = []
     for name in owned_classes(models):
         owner = models.class_annotation(name, OWNER_ANNOTATION)
         schema_file = models.schema_file_for(name)
         if owner is None:
             findings.append(_missing_owner(name, schema_file))
-        elif owner not in model.elements:
+        elif owner not in corpus.elements:
             findings.append(_unknown_owner(name, owner, schema_file))
-        elif name not in model.elements[owner].owns:
+        elif name not in corpus.elements[owner].owns:
             findings.append(_unclaimed(name, owner, schema_file))
     return findings
 
 
-def _element_findings(models: Models, model: Architecture) -> list[Finding]:
+def _element_findings(models: Models, corpus: Corpus) -> list[Finding]:
     known = set(owned_classes(models))
     findings = []
-    for element in sorted(model.elements.values(), key=lambda e: e.id):
+    for element in sorted(corpus.elements.values(), key=lambda e: e.id):
         for entity in element.owns:
             if entity not in known:
                 findings.append(
                     Finding(
                         id="OWN-4",
                         severity=Severity.error,
-                        file=models.element_file(element.id),
+                        file=corpus.element_files[element.id],
                         subject=element.id,
                         message=(
-                            f"element '{element.id}' claims entity '{entity}', "
-                            "which is not a class in the schema."
+                            f"element '{element.id}' claims class '{entity}', "
+                            "which is not in the schema."
                         ),
                         remedy=(
-                            f"Remove '{entity}' from the 'owns' metadata of '{element.id}', "
+                            f"Remove '{entity}' from the 'owns' of '{element.id}', "
                             "or add the class to the schema."
                         ),
                     )
@@ -103,33 +110,33 @@ def _element_findings(models: Models, model: Architecture) -> list[Finding]:
     return findings
 
 
-def _double_claim_findings(models: Models, model: Architecture) -> list[Finding]:
+def _double_claim_findings(models: Models, corpus: Corpus) -> list[Finding]:
     findings = []
     for name in owned_classes(models):
-        owners = model.owners_of(name)
+        owners = corpus.owners_of(name)
         if len(owners) > 1:
             findings.append(
                 Finding(
                     id="OWN-5",
                     severity=Severity.error,
-                    file=models.element_file(owners[0]),
+                    file=corpus.element_files[owners[0]],
                     subject=name,
                     message=(
                         f"class '{name}' is claimed by more than one element: "
                         + ", ".join(owners)
                         + "."
                     ),
-                    remedy=f"Leave '{name}' in the 'owns' metadata of exactly one element.",
+                    remedy=f"Leave '{name}' in the 'owns' of exactly one element.",
                 )
             )
     return findings
 
 
 def check(models: Models) -> list[Finding]:
-    """OWN-1..OWN-5: the ownership seam, checked in both directions (I14)."""
-    model = models.architecture
+    """OWN-1..OWN-5: schema classes against vocabulary elements, in both directions (I14)."""
+    corpus = models.vocabulary
     return [
-        *_class_findings(models, model),
-        *_element_findings(models, model),
-        *_double_claim_findings(models, model),
+        *_class_findings(models, corpus),
+        *_element_findings(models, corpus),
+        *_double_claim_findings(models, corpus),
     ]

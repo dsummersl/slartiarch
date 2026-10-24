@@ -242,10 +242,13 @@ Every check has a stable ID. IDs are permanent; retired checks are never reused.
 | ID | Finding |
 |----|---------|
 | OWN-1 | Class has no `owner` annotation |
-| OWN-2 | Class names an owner that is not a LikeC4 element |
+| OWN-2 | Class names an owner that is not an `Element` in the vocabulary instances |
 | OWN-3 | Class names an owner that does not list it under `owns` |
-| OWN-4 | Container lists an entity that is not a class in the schema |
-| OWN-5 | Class is claimed by more than one container |
+| OWN-4 | `Element` lists a class under `owns` that is not in the schema |
+| OWN-5 | Class is claimed by more than one `Element` |
+
+The ownership checks read only vocabulary instances. LikeC4's export reaches them
+translated into `Element`s, as any other producer's instances do.
 
 **Registry slarti (`REG-*`)**
 
