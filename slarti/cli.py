@@ -24,8 +24,8 @@ app = typer.Typer(
         "  • Document ↔ models  — the drift gate (DOC-1..DOC-4)\n"
         "  • Document ↔ rules  — the constraint registry (REG-1..REG-7)\n"
         "  • Instance inputs   — vocabulary instances any tool may produce (INP-1..INP-3)\n"
-        "  • Diagrams ↔ elements — disposition, identity, dangling (DSP-*, IDN-*, DNG-*,\n"
-        "    VIS-1)\n"
+        "  • Diagrams ↔ elements — attachment, identity, dangling, drawn\n"
+        "    (ATTACH-*, IDENT-*, DANGLE-*, DRAWN-1)\n"
         "Everything else — parsing, validation, rendering — is delegated.\n"
         "\n"
         "Project layout (``slarti init`` scaffolds this):\n"
@@ -159,7 +159,8 @@ def check(
     skip_docs: bool = typer.Option(False, "--no-docs", help="Skip the DOC-* checks."),
 ) -> None:
     """Validate model sources against all rules. Use --json.
-    IDs: INP-*, OWN-*, DSP-*, IDN-*, DNG-*, VIS-*, REG-*, DOC-*, ENV-*."""
+    IDs: INP-*, OWN-*, ATTACH-*, IDENT-*, DANGLE-*, DRAWN-*, REG-*, DOC-*,
+    ENV-*."""
     ctx = _context()
     report, delegated_ok = runner.check(ctx, include_docs=not skip_docs)
     typer.echo(report.as_json_verbose() if json_output else report.as_text())

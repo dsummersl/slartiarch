@@ -97,18 +97,18 @@ the names they already show. An edge's `relation` must match the `kind` (or titl
 of a relation declared from the element its source node depicts to the element its
 target node depicts.
 
-| ID      | Meaning                                                                   |
-| ------- | ------------------------------------------------------------------------- |
-| `DSP-1` | A node or edge has no disposition.                                        |
-| `DSP-2` | A node or edge is both attached and ignored.                              |
-| `DSP-3` | A node or edge is ignored with a blank reason.                            |
-| `IDN-1` | An id or alias is declared by more than one element.                      |
-| `IDN-2` | A node attaches through a name that resolves to more than one element.    |
-| `DNG-1` | A node attaches to a name no element declares.                            |
-| `DNG-2` | An edge's relation is not declared between its endpoints' elements.       |
-| `DNG-3` | An attached edge ends at a node that is ignored or unattached.            |
-| `DNG-4` | An edge ends at a node id no diagram declares.                            |
-| `VIS-1` | An element of a kind that must be drawn appears in no diagram (opt-in).   |
+| ID         | Meaning                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| `ATTACH-1` | A node or edge has no disposition.                                        |
+| `ATTACH-2` | A node or edge is both attached and ignored.                              |
+| `ATTACH-3` | A node or edge is ignored with a blank reason.                            |
+| `IDENT-1`  | An id or alias is declared by more than one element.                      |
+| `IDENT-2`  | A node attaches through a name that resolves to more than one element.    |
+| `DANGLE-1` | A node attaches to a name no element declares.                            |
+| `DANGLE-2` | An edge's relation is not declared between its endpoints' elements.       |
+| `DANGLE-3` | An attached edge ends at a node that is ignored or unattached.            |
+| `DANGLE-4` | An edge ends at a node id no diagram declares.                            |
+| `DRAWN-1`  | An element of a kind that must be drawn appears in no diagram (opt-in).   |
 
 Node and edge findings point at the `location` the producer read, not at the
 instance file. The reverse check is opt-in per element kind: annotate the kind in

@@ -15,15 +15,15 @@ from tests.test_cli import stub_context
 
 FIXTURES = Path(__file__).parent / "data" / "structure"
 RULES = [
-    *(f"DSP-{n}" for n in range(1, 4)),
-    "IDN-1",
-    "IDN-2",
-    *(f"DNG-{n}" for n in range(1, 5)),
-    "VIS-1",
+    *(f"ATTACH-{n}" for n in range(1, 4)),
+    "IDENT-1",
+    "IDENT-2",
+    *(f"DANGLE-{n}" for n in range(1, 5)),
+    "DRAWN-1",
 ]
 
 # An ambiguous attachment is only possible through an ambiguous declaration.
-CO_FIRES = {"IDN-2": {"IDN-1"}}
+CO_FIRES = {"IDENT-2": {"IDENT-1"}}
 
 
 def ids(findings: list) -> list[str]:
@@ -64,24 +64,24 @@ def test_valid_fixture_is_silent(tmp_path: Path, rule: str) -> None:
 
 
 def test_drawn_findings_point_at_the_diagram_source(tmp_path: Path) -> None:
-    (finding,) = structure.check(fixture_models(tmp_path, "invalid", "DNG-1"))
+    (finding,) = structure.check(fixture_models(tmp_path, "invalid", "DANGLE-1"))
     assert (finding.file, finding.line, finding.subject) == ("notes.md", 2, "d/queue")
 
 
 def test_declared_ambiguity_points_at_the_element_file(tmp_path: Path) -> None:
-    (finding,) = structure.check(fixture_models(tmp_path, "invalid", "IDN-1"))
+    (finding,) = structure.check(fixture_models(tmp_path, "invalid", "IDENT-1"))
     assert finding.file == "architecture/corpus.yaml"
     assert finding.subject == "store"
 
 
 def test_an_element_whose_own_id_is_its_alias_is_not_ambiguous(tmp_path: Path) -> None:
-    models = fixture_models(tmp_path, "valid", "DSP-2")
+    models = fixture_models(tmp_path, "valid", "ATTACH-2")
     models.vocabulary.aliases["todo.api"] = ["todo.api", "api"]
     assert structure.check(models) == []
 
 
 def test_drawn_is_inherited_by_subkinds(tmp_path: Path) -> None:
-    models = fixture_models(tmp_path, "valid", "VIS-1")
+    models = fixture_models(tmp_path, "valid", "DRAWN-1")
     schema = models.config.root / "schema" / "todo.yaml"
     schema.write_text(
         schema.read_text().replace(
@@ -90,7 +90,7 @@ def test_drawn_is_inherited_by_subkinds(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     findings = structure.check(Models(config=models.config))
-    assert ids(findings) == ["VIS-1"]
+    assert ids(findings) == ["DRAWN-1"]
     assert findings[0].subject == "todo.db"
 
 

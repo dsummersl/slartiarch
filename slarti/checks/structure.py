@@ -52,22 +52,22 @@ def _at(drawn: Drawn, rule: str, message: str, remedy: str) -> Finding:
 
 # (attached, ignored, reason given) -> the disposition rule that state breaks.
 _BROKEN = {
-    (False, False, False): "DSP-1",
-    (True, True, False): "DSP-2",
-    (True, True, True): "DSP-2",
-    (False, True, False): "DSP-3",
+    (False, False, False): "ATTACH-1",
+    (True, True, False): "ATTACH-2",
+    (True, True, True): "ATTACH-2",
+    (False, True, False): "ATTACH-3",
 }
 
 _DISPOSITION = {
-    "DSP-1": (
+    "ATTACH-1": (
         "{what} has no disposition: it is neither attached nor ignored.",
         "Give {what} '{slot}: <{target}>', or 'ignored: <reason>'.",
     ),
-    "DSP-2": (
+    "ATTACH-2": (
         "{what} is both attached and ignored.",
         "Keep exactly one of '{slot}' and 'ignored' on {what}.",
     ),
-    "DSP-3": (
+    "ATTACH-3": (
         "{what} is ignored without a reason.",
         "Say why {what} depicts nothing in the architecture, or attach it.",
     ),
@@ -75,7 +75,7 @@ _DISPOSITION = {
 
 
 def _disposition(drawn: Drawn) -> Finding | None:
-    """DSP-1..DSP-3: a drawn construct is attached or ignored with a reason, never neither."""
+    """ATTACH-1..ATTACH-3: a drawn construct is attached or ignored with a reason, never neither."""
     reason = bool((drawn.ignored or "").strip())
     rule = _BROKEN.get((drawn.attaches_to is not None, drawn.ignored is not None, reason))
     if rule is None:
@@ -92,21 +92,21 @@ def _disposition(drawn: Drawn) -> Finding | None:
 
 
 def _node_attachment(node: Drawn, names: Names) -> Finding | None:
-    """IDN-2 and DNG-1: a node's attachment names exactly one element."""
+    """IDENT-2 and DANGLE-1: a node's attachment names exactly one element."""
     ids = names.all(node.attaches_to)
     if not node.attached or len(ids) == 1:
         return None
     if ids:
         return _at(
             node,
-            "IDN-2",
+            "IDENT-2",
             f"node '{node.id}' attaches to '{node.attaches_to}', which resolves to more "
             f"than one element: {', '.join(ids)}.",
             f"Attach node '{node.id}' by an element id, and give each alias to one element.",
         )
     return _at(
         node,
-        "DNG-1",
+        "DANGLE-1",
         f"node '{node.id}' attaches to '{node.attaches_to}', which is not an element "
         "or an alias.",
         f"Attach node '{node.id}' to an element that exists, or declare '{node.attaches_to}'.",
@@ -123,7 +123,7 @@ def _endpoint_missing(edge: Drawn, nodes: dict[str, Drawn]) -> Finding | None:
         return None
     return _at(
         edge,
-        "DNG-4",
+        "DANGLE-4",
         f"edge '{edge.id}' ends at {_quoted(missing)}, which no diagram draws as a node.",
         "Point the edge at node ids the corpus declares, or add the missing node.",
     )
@@ -135,7 +135,7 @@ def _endpoint_unattached(edge: Drawn, nodes: dict[str, Drawn]) -> Finding | None
         return None
     return _at(
         edge,
-        "DNG-3",
+        "DANGLE-3",
         f"edge '{edge.id}' is attached, but its endpoint {_quoted(loose)} is ignored "
         "or unattached.",
         "Attach the endpoint node to an element, or ignore the edge with a reason.",
@@ -157,7 +157,7 @@ def _relation_missing(edge: Drawn, nodes: dict[str, Drawn], names: Names, corpus
         return None
     return _at(
         edge,
-        "DNG-2",
+        "DANGLE-2",
         f"edge '{edge.id}' depicts relation '{edge.attaches_to}', which the architecture "
         f"does not declare from '{ends[0]}' to '{ends[1]}'.",
         f"Declare a '{edge.attaches_to}' relation from '{ends[0]}' to '{ends[1]}', "
@@ -167,7 +167,7 @@ def _relation_missing(edge: Drawn, nodes: dict[str, Drawn], names: Names, corpus
 
 def _edge_attachment(edge: Drawn, nodes: dict[str, Drawn], names: Names, corpus: Corpus
                      ) -> Finding | None:
-    """DNG-2..DNG-4: an edge joins drawn nodes and depicts a relation that exists."""
+    """DANGLE-2..DANGLE-4: an edge joins drawn nodes and depicts a relation that exists."""
     missing = _endpoint_missing(edge, nodes)
     if missing or not edge.attached:
         return missing
@@ -175,10 +175,10 @@ def _edge_attachment(edge: Drawn, nodes: dict[str, Drawn], names: Names, corpus:
 
 
 def _ambiguous_names(corpus: Corpus, names: Names) -> list[Finding]:
-    """IDN-1: every declared name resolves to exactly one element."""
+    """IDENT-1: every declared name resolves to exactly one element."""
     return [
         Finding(
-            id="IDN-1",
+            id="IDENT-1",
             severity=Severity.error,
             file=corpus.element_files.get(ids[0], ""),
             subject=name,
@@ -215,10 +215,10 @@ def _undrawn_elements(models: Models, corpus: Corpus, names: Names) -> list[Elem
 
 
 def _undrawn(models: Models, corpus: Corpus, names: Names) -> list[Finding]:
-    """VIS-1: an element of a kind that opts in appears in at least one diagram."""
+    """DRAWN-1: an element of a kind that opts in appears in at least one diagram."""
     return [
         Finding(
-            id="VIS-1",
+            id="DRAWN-1",
             severity=Severity.error,
             file=corpus.element_files.get(element.id, ""),
             subject=element.id,
@@ -245,7 +245,7 @@ def _drawn_findings(corpus: Corpus, names: Names) -> list[Finding | None]:
 
 
 def check(models: Models) -> list[Finding]:
-    """DSP-*, IDN-*, DNG-* and VIS-1: diagrams against the architecture, in both directions."""
+    """ATTACH-*, IDENT-*, DANGLE-*, DRAWN-1: diagrams against the architecture, both ways."""
     corpus = models.vocabulary
     names = Names.of(corpus)
     found = [f for f in _drawn_findings(corpus, names) if f is not None]
