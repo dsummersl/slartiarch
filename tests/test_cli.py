@@ -100,3 +100,15 @@ def test_passing_delegations_say_nothing(capsys) -> None:
     ok = delegated.Delegation("likec4", ["likec4"], Result(0, "quiet\n", ""))
     assert delegated.report([ok])
     assert capsys.readouterr().out == ""
+
+
+def test_doctor_probes_node_only_for_likec4_projects(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("slarti.proc.run", lambda argv, cwd=None: Result(0, "v1.60.0", ""))
+    RUNNER.invoke(app, ["init"])
+    assert "skip node" in RUNNER.invoke(app, ["doctor"]).stdout
+    (tmp_path / "docs/slarti/likec4").mkdir()
+    (tmp_path / "docs/slarti/likec4/model.c4").write_text("model {}\n", encoding="utf-8")
+    doctor = RUNNER.invoke(app, ["doctor"]).stdout
+    assert "skip node" not in doctor
+    assert "ok   likec4" in doctor

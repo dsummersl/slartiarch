@@ -18,7 +18,7 @@ app = typer.Typer(
     help=(
         "Coordination CLI for validated architecture docs.\n"
         "\n"
-        "slartiarch checks consistency between LikeC4 diagrams, LinkML schemas,\n"
+        "slartiarch checks consistency between architecture diagrams, LinkML schemas,\n"
         "and SHACL shapes. It owns the seams — the joins neither tool can see:\n"
         "  • Elements ↔ LinkML — the ownership seam (OWN-1..OWN-5)\n"
         "  • Document ↔ models  — the drift gate (DOC-1..DOC-4)\n"
@@ -34,7 +34,8 @@ app = typer.Typer(
         "    architecture.md          prose with generated diagram and table regions\n"
         "    diagrams/                GENERATED — never hand-edit\n"
         "    slarti/\n"
-        "      likec4/*.c4            LikeC4 architecture model\n"
+        "      instances/*.yaml       vocabulary instances: elements, relations, diagrams\n"
+        "      likec4/*.c4            optional LikeC4 model (``init --likec4``; needs Node)\n"
         "      linkml/*.yaml          LinkML domain schemas\n"
         "      shacl/*.ttl            hand-written SHACL shapes\n"
         "      constraints.yaml       rule registry\n"
@@ -108,10 +109,16 @@ _PATH_DESCRIPTIONS: dict[str, str] = {
 
 
 @app.command()
-def init(directory: Path = DIRECTORY_ARGUMENT) -> None:
+def init(
+    directory: Path = DIRECTORY_ARGUMENT,
+    likec4: bool = typer.Option(
+        False, "--likec4", help="Scaffold a LikeC4 model instead of instances (needs Node)."
+    ),
+) -> None:
     """Scaffold config, docs/slarti/, and an architecture doc with example markers.
+    Structure is written as vocabulary instances unless --likec4 is given.
     Never overwrites existing files."""
-    result = scaffold.init(directory)
+    result = scaffold.init(directory, likec4=likec4)
     for name in result.written:
         typer.echo(f"created {name}")
     for name in result.skipped:
@@ -139,21 +146,35 @@ def _show_paths(cfg: config_module.Config) -> None:
 
 @app.command()
 def doctor() -> None:
-    """Show resolved project paths and probe every delegated tool."""
+    """Show resolved project paths and probe every delegated tool the project needs.
+    Node and LikeC4 are required only when the project keeps *.c4 sources."""
     cfg = _load_config()
     _show_paths(cfg)
     typer.echo("")
-    probes = env.probe_all(mermaid=_mermaid_root(cfg))
+    likec4 = cfg.likec4_enabled()
+    probes = env.probe_all(likec4=likec4, mermaid=_mermaid_root(cfg))
     for probe in probes:
         typer.echo(_probe_line(probe))
         typer.echo(f"     {probe.detail}")
+    if not likec4:
+        _show_not_required(cfg)
+    _show_vocabulary()
+    failed = any(not p.ok for p in probes)
+    raise typer.Exit(EXIT_ENVIRONMENT if failed else EXIT_CLEAN)
+
+
+def _show_not_required(cfg: config_module.Config) -> None:
+    for tool in env.LIKEC4_TOOLS:
+        typer.echo(f"skip {tool:8} {'-':10} not required")
+        typer.echo(f"     no *.c4 sources under {cfg.paths['likec4']}")
+
+
+def _show_vocabulary() -> None:
     typer.echo(f"ok   {'vocabulary':8} {vocabulary.version():10} {vocabulary.SCHEMA}")
     typer.echo(f"     import as '{vocabulary.IMPORT}' from a project schema")
     for name, profile in vocabulary.profile_versions().items():
         typer.echo(f"ok   {'profile':8} {profile:10} {vocabulary.PROFILES[name]}")
         typer.echo(f"     optional; import as '{name}' from a project schema")
-    failed = any(not p.ok for p in probes)
-    raise typer.Exit(EXIT_ENVIRONMENT if failed else EXIT_CLEAN)
 
 
 def _probe_line(probe: Probe) -> str:
