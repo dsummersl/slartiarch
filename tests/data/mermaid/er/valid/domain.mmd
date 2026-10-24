@@ -1,0 +1,20 @@
+erDiagram
+  %% A diagram of data rather than of the system: every entity and relationship is ignored.
+  %% slarti: ignore * the domain model, which the LinkML schema checks
+  direction LR
+  CUSTOMER {
+    string name
+    string email UK
+    int custNumber PK, FK "the number billing assigns"
+  }
+  ORDER { }
+  LINE-ITEM
+  ADDRESS["Delivery address"]
+  INVOICE[Invoice]
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ LINE-ITEM : "contains many"
+  CUSTOMER }|..|{ ADDRESS : uses
+  ORDER |o--o| ADDRESS : "ships to"
+  ORDER }o--|| CUSTOMER : ""
+  INVOICE ||--|| ORDER : bills
+  style CUSTOMER fill:#fee

@@ -56,6 +56,10 @@ LikeC4 owns *the boxes and arrows*: elements, containment, relationships, views.
   the whole model as JSON (`likec4 export json`).
 - **Not responsible for.** Anything about an instance of data. LikeC4 has no notion
   of a field, a type or a cardinality.
+- **Mermaid instead.** A project may draw its diagrams in Mermaid. The Mermaid
+  adapter parses sequence and entity-relationship diagrams in Python and emits the
+  same vocabulary instances, so the diagram checks hold for both; syntax outside
+  its subset is an `MMD-*` finding (`docs/mermaid.md`).
 - **How `slarti` uses it.** Only the LikeC4 adapter shells out to it (D5, D6). The
   adapter translates the export into vocabulary instances: elements and relations,
   and each view as a diagram whose nodes and edges carry a `SourceLocation` in the
@@ -113,7 +117,7 @@ enforces.
 - No cache and no state file: everything is derived on each invocation.
 - No JVM, no Docker and no browser on the default path.
 - Supported ranges are enforced at runtime: LikeC4 `>=1.59,<2`, LinkML
-  `>=1.11,<2`, Node `>=20`, Python `>=3.11,<4`. Outside the range `slarti`
+  `>=1.11,<2`, Node `>=20`, Python `>=3.11,<4`, and a pinned Mermaid `>=11,<13`. Outside the range `slarti`
   refuses to run rather than producing possibly-wrong output.
 
 ## 4. Context
@@ -177,8 +181,8 @@ graph TB
   end
   Pyshacl@{ shape: rectangle, label: "pyshacl" }
   Linkml@{ shape: rectangle, label: "LinkML" }
-  Sources@{ shape: rectangle, label: "Model sources" }
   Likec4@{ shape: rectangle, label: "LikeC4" }
+  Sources@{ shape: rectangle, label: "Model sources" }
   Architect -. "`runs check and docs`" .-> Slarti.Cli
   Agent -. "`runs check --json and applies remedies`" .-> Slarti.Cli
   Slarti.Cli -. "`runs the checks`" .-> Slarti.Runner
@@ -206,9 +210,49 @@ graph TB
   Slarti.Env -. "`probes the version`" .-> Likec4
   Slarti.Env -. "`probes the version`" .-> Linkml
   Slarti.Adapters -. "`export json`" .-> Likec4
+  Slarti.Adapters -. "`parses Mermaid diagrams in`" .-> Sources
 ```
 
 <!-- slarti:end diagram:containers -->
+
+### 5.1 One `slartiarch check`
+
+A hand-written diagram, read back by the Mermaid adapter: every participant is
+attached to the container it depicts, and every call must be a relation the model
+declares, so this diagram cannot drift from the containers view above.
+
+```mermaid
+sequenceDiagram
+  title: One slartiarch check
+  %% slarti: attach architect architect
+  %% slarti: attach cli slarti.cli
+  %% slarti: attach env slarti.env
+  %% slarti: attach runner slarti.runner
+  %% slarti: attach checks slarti.checks
+  %% slarti: attach models slarti.models
+  %% slarti: attach adapters slarti.adapters
+  %% slarti: ignore adapters -> models a reply: the instances flow back along the call
+  %% slarti: ignore checks -> runner a reply: the findings flow back along the call
+  %% slarti: ignore runner -> cli a reply: the report flows back along the call
+  %% slarti: ignore cli -> architect a reply: what the architect reads
+  actor architect as Architect
+  participant cli as CLI
+  participant env as Environment gate
+  participant runner as Runner
+  participant checks as Checks
+  participant models as Models
+  participant adapters as Adapters
+  architect->>cli: runs check and docs
+  cli->>env: gates on tool versions
+  cli->>runner: runs the checks
+  runner->>checks: collects findings
+  checks->>models: reads both models
+  models->>adapters: reads instances from
+  adapters-->>models: vocabulary instances
+  checks-->>runner: findings
+  runner-->>cli: one report
+  cli-->>architect: findings, each with a remedy
+```
 
 ## 6. The ownership seam
 

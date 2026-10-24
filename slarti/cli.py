@@ -24,8 +24,9 @@ app = typer.Typer(
         "  • Document ↔ models  — the drift gate (DOC-1..DOC-4)\n"
         "  • Document ↔ rules  — the constraint registry (REG-1..REG-7)\n"
         "  • Instance inputs   — vocabulary instances any tool may produce (INP-1..INP-3)\n"
-        "  • Diagrams ↔ elements — attachment, identity, dangling, drawn\n"
-        "    (ATTACH-*, IDENT-*, DANGLE-*, DRAWN-1)\n"
+        "  • Mermaid diagrams  — sequence and ER diagrams read in Python (MMD-1..MMD-4)\n"
+        "  • Diagrams ↔ elements — attachment, identity, dangling, drawn, kind\n"
+        "    (ATTACH-*, IDENT-*, DANGLE-*, DRAWN-1, KIND-1)\n"
         "Everything else — parsing, validation, rendering — is delegated.\n"
         "\n"
         "Project layout (``slarti init`` scaffolds this):\n"
@@ -68,8 +69,13 @@ def _load() -> config_module.Config:
     return _load_config()
 
 
+def _mermaid_root(cfg: config_module.Config) -> Path | None:
+    """The root whose pinned Mermaid is checked, when the Mermaid adapter runs."""
+    return cfg.root if cfg.mermaid_enabled() else None
+
+
 def _gate(cfg: config_module.Config) -> None:
-    probes = env.probe_all(likec4=cfg.likec4_enabled())
+    probes = env.probe_all(likec4=cfg.likec4_enabled(), mermaid=_mermaid_root(cfg))
     failures = env.env_findings(probes)
     if failures:
         for finding in failures:
@@ -97,6 +103,7 @@ _PATH_DESCRIPTIONS: dict[str, str] = {
     "constraints": "Rule registry connecting rules to enforcers",
     "documents": "Architecture documents to generate",
     "instances": "Vocabulary instance files or directories (*.yaml, *.yml, *.json)",
+    "mermaid": "Mermaid diagrams: *.mmd files, Markdown files, or directories of either",
     "diagrams": "Generated diagram images",
 }
 
@@ -131,7 +138,8 @@ def _show_paths(cfg: config_module.Config) -> None:
     for key, value in sorted(cfg.paths.items()):
         desc = _PATH_DESCRIPTIONS.get(key, "")
         typer.echo(f"  {key:16} {value:40} {desc}")
-    for key, values in (("documents", cfg.documents), ("instances", cfg.instances)):
+    lists = (("documents", cfg.documents), ("instances", cfg.instances), ("mermaid", cfg.mermaid))
+    for key, values in lists:
         if values:
             typer.echo(f"  {key:16} {str(values):40} {_PATH_DESCRIPTIONS[key]}")
 
@@ -144,7 +152,7 @@ def doctor() -> None:
     _show_paths(cfg)
     typer.echo("")
     likec4 = cfg.likec4_enabled()
-    probes = env.probe_all(likec4=likec4)
+    probes = env.probe_all(likec4=likec4, mermaid=_mermaid_root(cfg))
     for probe in probes:
         typer.echo(_probe_line(probe))
         typer.echo(f"     {probe.detail}")
@@ -180,8 +188,8 @@ def check(
     skip_docs: bool = typer.Option(False, "--no-docs", help="Skip the DOC-* checks."),
 ) -> None:
     """Validate model sources against all rules. Use --json.
-    IDs: INP-*, OWN-*, ATTACH-*, IDENT-*, DANGLE-*, DRAWN-*, REG-*, DOC-*,
-    ENV-*."""
+    IDs: INP-*, MMD-*, OWN-*, ATTACH-*, IDENT-*, DANGLE-*, DRAWN-*, KIND-*, REG-*,
+    DOC-*, ENV-*."""
     ctx = _context()
     report, delegated_ok = runner.check(ctx, include_docs=not skip_docs)
     typer.echo(report.as_json_verbose() if json_output else report.as_text())

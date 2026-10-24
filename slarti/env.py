@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import sys
@@ -88,18 +89,41 @@ def probe(req: Requirement, cwd: Path | None = None) -> Probe:
     version = parse_version(result.stdout) or parse_version(result.stderr)
     if version is None:
         return _probe(req.tool, None, _locate(req), "version could not be determined", False)
-    return _classify(req, version)
+    return _classify(req, version, _locate(req))
 
 
 def _in_range(req: Requirement, version: Version) -> bool:
     return version >= req.floor and (req.ceiling is None or version < req.ceiling)
 
 
-def _classify(req: Requirement, version: Version) -> Probe:
+def _classify(req: Requirement, version: Version, location: str | None) -> Probe:
     if _in_range(req, version):
-        return _probe(req.tool, version, _locate(req), f"within {range_text(req)}", True)
+        return _probe(req.tool, version, location, f"within {range_text(req)}", True)
     detail = f"requires {range_text(req)}; upgrade with: {req.upgrade}"
-    return _probe(req.tool, version, _locate(req), detail, False)
+    return _probe(req.tool, version, location, detail, False)
+
+
+# The Mermaid adapter parses in Python, so no tool runs; a project that pins Mermaid for
+# rendering must pin a version whose syntax the adapter's subset is checked against.
+MERMAID = Requirement(
+    "mermaid", (11, 0, 0), (13, 0, 0), [], "npm install @mermaid-js/mermaid-cli@^12"
+)
+MERMAID_PACKAGE = Path("node_modules/mermaid/package.json")
+
+
+def probe_mermaid(root: Path) -> Probe:
+    """Check the project's pinned Mermaid, read from its package; none pinned passes."""
+    package = root / MERMAID_PACKAGE
+    if not package.is_file():
+        detail = f"none pinned; the adapter reads the Mermaid {range_text(MERMAID)} subset"
+        return _probe(MERMAID.tool, None, None, detail, True)
+    try:
+        version = parse_version(str(json.loads(package.read_text(encoding="utf-8"))["version"]))
+    except (ValueError, KeyError, TypeError):
+        version = None
+    if version is None:
+        return _probe(MERMAID.tool, None, str(package), "version could not be determined", False)
+    return _classify(MERMAID, version, str(package))
 
 
 def probe_python() -> Probe:
@@ -113,12 +137,18 @@ def probe_python() -> Probe:
 LIKEC4_TOOLS = ("node", "likec4")
 
 
-def probe_all(cwd: Path | None = None, likec4: bool = True) -> list[Probe]:
+def probe_all(cwd: Path | None = None, likec4: bool = True,
+              mermaid: Path | None = None) -> list[Probe]:
     """Probe every delegated tool once. Cached in-process only by the caller (I4).
 
-    Without ``likec4``, the tools only the LikeC4 adapter needs are not probed."""
+    Without ``likec4``, the tools only the LikeC4 adapter needs are not probed. With
+    ``mermaid``, the Mermaid pinned under that project root is checked too."""
     required = [r for r in REQUIREMENTS if likec4 or r.tool not in LIKEC4_TOOLS]
-    return [probe_python(), *(probe(req, cwd) for req in required)]
+    return [probe_python(), *(probe(req, cwd) for req in required), *_pinned(mermaid)]
+
+
+def _pinned(root: Path | None) -> list[Probe]:
+    return [] if root is None else [probe_mermaid(root)]
 
 
 def env_findings(probes: list[Probe]) -> list[Finding]:

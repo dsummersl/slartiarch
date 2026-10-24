@@ -61,3 +61,11 @@ def test_missing_pyproject_section_is_an_error(tmp_path: Path) -> None:
     (tmp_path / "pyproject.toml").write_text("[project]\nname = 'foo'\n", encoding="utf-8")
     with pytest.raises(config_module.ConfigError):
         config_module.load(tmp_path)
+
+
+def test_mermaid_inputs_enable_the_mermaid_adapter(tmp_path: Path) -> None:
+    (tmp_path / "slarti.toml").write_text("[paths]\n", encoding="utf-8")
+    assert not config_module.load(tmp_path).mermaid_enabled()
+    (tmp_path / "slarti.toml").write_text('[paths]\nmermaid = "docs/a.md"\n', encoding="utf-8")
+    cfg = config_module.load(tmp_path)
+    assert cfg.mermaid == ["docs/a.md"] and cfg.mermaid_enabled()

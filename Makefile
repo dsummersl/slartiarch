@@ -1,4 +1,4 @@
-.PHONY: setup test lint type adr new coverage vulture fix radon treepeat ci arch docs domain
+.PHONY: setup test lint type adr new coverage vulture fix radon treepeat ci arch docs domain mermaid
 
 setup:
 	uv venv
@@ -39,3 +39,7 @@ arch:
 
 docs:
 	uv run slartiarch docs
+
+# ADR-0004: what the Mermaid adapter accepts must render. Node is needed here only.
+mermaid:
+	.github/scripts/render_mermaid.sh

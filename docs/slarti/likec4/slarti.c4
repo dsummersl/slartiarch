@@ -70,7 +70,7 @@ model {
     }
 
     adapters = container 'Adapters' {
-      description 'Built-in producers: LikeC4 via export json, translated into vocabulary instances.'
+      description 'Built-in producers: LikeC4 via export json, and Mermaid sequence and ER diagrams parsed in Python, translated into vocabulary instances.'
     }
 
     vocabulary = container 'Vocabulary' {
@@ -120,6 +120,7 @@ model {
   slarti.cli -> slarti.vocabulary 'reports the version'
   slarti.models -> slarti.adapters 'reads instances from'
   slarti.adapters -> likec4 'export json'
+  slarti.adapters -> sources 'parses Mermaid diagrams in'
   slarti.adapters -> slarti.vocabulary 'emits instances of'
   slarti.models -> linkml 'SchemaView'
   slarti.env -> likec4 'probes the version'
