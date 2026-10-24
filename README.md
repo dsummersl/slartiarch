@@ -81,7 +81,7 @@ diagrams and tables so the architecture document never goes stale.
 
 ## The vocabulary
 
-`slarti` ships its own LinkML vocabulary ([ADR-0004](docs/adr/0004-slarti-owns-its-vocabulary.md)),
+`slarti` ships its own LinkML vocabulary,
 versioned with the package. Its structural layer (`Diagram`, `Node`, `Edge`,
 `SourceLocation`) records what a diagram says; its architectural layer (`Element`,
 `Relation`) is the base your schema extends:
