@@ -135,7 +135,7 @@ class Models:
 
     @cached_property
     def vocabulary(self) -> Corpus:
-        """Every element and relation as a vocabulary instance; LikeC4's export is translated here."""
+        """Every element and relation as a vocabulary instance; LikeC4's export is translated."""
         corpus = self.instances
         likec4 = self.likec4
         source = self.config.paths["likec4"]
