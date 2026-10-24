@@ -1,0 +1,4 @@
+elements:
+  - id: shop.api
+    kind: Microservice
+    name: API

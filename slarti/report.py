@@ -272,7 +272,11 @@ class Report:
     def as_json(self) -> str:
         payload = {
             "seam_version": __version__,
-            "vocabulary": {"import": vocabulary.IMPORT, "version": vocabulary.version()},
+            "vocabulary": {
+                "import": vocabulary.IMPORT,
+                "version": vocabulary.version(),
+                "profiles": vocabulary.profile_versions(),
+            },
             "constraints_file": self.constraints_file,
             "enforcer_kinds": _enforcer_catalog(),
             "constraints": [r.as_dict() for r in self.rules],

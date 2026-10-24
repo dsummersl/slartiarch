@@ -1,0 +1,15 @@
+# A project schema that adopts the C4 profile, as an adopter writes one.
+id: https://example.org/shop
+name: shop
+prefixes:
+  shop: https://example.org/shop/
+  linkml: https://w3id.org/linkml/
+  slarti: https://dsummersl.github.io/slarti/
+default_prefix: shop
+default_range: string
+imports:
+  - linkml:types
+  - slarti:c4
+classes:
+  Database:
+    is_a: Container

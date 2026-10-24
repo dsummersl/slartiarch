@@ -1,0 +1,62 @@
+id: https://dsummersl.github.io/slarti/c4
+name: slarti_c4
+title: The C4 profile
+description: >-
+  An optional profile of the slarti vocabulary for projects that draw their
+  architecture with the C4 model: people, software systems, containers and
+  components, and the relationships between them. Nothing in slarti's checks
+  assumes it. Import it as `slarti:c4` in place of, or alongside,
+  `slarti:vocabulary`.
+version: 0.1.0
+license: Apache-2.0
+prefixes:
+  slarti_c4: https://dsummersl.github.io/slarti/c4/
+  slarti: https://dsummersl.github.io/slarti/
+  linkml: https://w3id.org/linkml/
+default_prefix: slarti_c4
+default_range: string
+imports:
+  - linkml:types
+  - slarti:vocabulary
+
+classes:
+  Person:
+    description: A human user of the software systems in the model.
+    is_a: Element
+
+  SoftwareSystem:
+    description: The highest level of abstraction; something that delivers value to its users.
+    is_a: Element
+    attributes:
+      external:
+        description: Whether the system is outside the scope of the architecture being described.
+        range: boolean
+
+  Container:
+    description: A separately runnable or deployable unit inside a software system.
+    is_a: Element
+    attributes:
+      system:
+        description: The software system the container belongs to.
+        range: SoftwareSystem
+        required: true
+      technology:
+        description: What the container is built with.
+
+  Component:
+    description: A grouping of related functionality inside a container.
+    is_a: Element
+    attributes:
+      container:
+        description: The container the component belongs to.
+        range: Container
+        required: true
+      technology:
+        description: What the component is built with.
+
+  Relationship:
+    description: A C4 relationship; one element uses another.
+    is_a: Relation
+    attributes:
+      technology:
+        description: The protocol or mechanism the relationship uses.
