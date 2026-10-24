@@ -1,0 +1,7 @@
+sequenceDiagram
+  %% The worker never calls the API back in the architecture.
+  %% slarti: attach api todo.api
+  %% slarti: attach worker todo.worker
+  participant api
+  participant worker
+  worker->>api: reports progress

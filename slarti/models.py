@@ -11,7 +11,7 @@ from rdflib.namespace import SH
 from rdflib.term import URIRef
 
 from slarti import instances, vocabulary
-from slarti.adapters import likec4
+from slarti.adapters import likec4, mermaid
 from slarti.config import Config
 from slarti.instances import Corpus
 
@@ -52,15 +52,21 @@ class Models:
         return self._likec4
 
     @cached_property
+    def mermaid(self) -> mermaid.Produced:
+        """The Mermaid adapter's instances and the findings it raised reading the diagrams."""
+        return mermaid.produce(self.config)
+
+    @cached_property
     def instances(self) -> instances.Corpus:
         return instances.load(self.config)
 
     @cached_property
     def vocabulary(self) -> Corpus:
-        """Every producer's instances in one corpus: the adapter's, then the instance files'."""
+        """Every producer's instances in one corpus: the adapters', then the instance files'."""
         adapted = Corpus()
-        for file, raw in sorted(self.likec4.items()):
-            instances.add(adapted, file, raw)
+        for documents in (self.likec4, self.mermaid.documents):
+            for file, raw in sorted(documents.items()):
+                instances.add(adapted, file, raw)
         return adapted.merged(self.instances)
 
     @cached_property

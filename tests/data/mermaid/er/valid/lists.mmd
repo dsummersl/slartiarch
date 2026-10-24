@@ -1,0 +1,14 @@
+---
+title: Lists and tasks
+---
+erDiagram
+  %% Classes attach entities by name; the class is the kind the element must be.
+  %% slarti: alias TASK todo.tasks
+  TODO-LIST:::Table
+  TASK["Task"] {
+    string id PK
+    string list FK "the list it belongs to"
+  }
+  class TASK Table
+  classDef Table fill:#eef,stroke:#336
+  TODO-LIST ||--o{ TASK : contains

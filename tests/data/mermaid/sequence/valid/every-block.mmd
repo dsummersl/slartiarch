@@ -1,0 +1,35 @@
+sequenceDiagram
+  title: Every block the subset reads
+  %% slarti: attach api todo.api
+  %% slarti: attach worker todo.worker
+  %% slarti: attach db todo.db
+  %% slarti: ignore clock a timer, which is not part of the system
+  participant api
+  participant worker
+  participant db
+  participant clock
+  clock-)api: tick
+  alt work is waiting
+    api->>worker: enqueues
+  else nothing to do
+    Note right of api: sleeps
+  end
+  opt a batch is full
+    api-xworker: enqueues
+  end
+  par write
+    worker->>db: writes tasks
+  and read
+    api->>db: reads tasks
+  end
+  critical the write must land
+    worker-->db: writes tasks
+  option the database is down
+    Note left of worker: retries
+  end
+  break the worker stops
+    api->db: reads tasks
+  end
+  rect rgb(200, 220, 255)
+    worker--)db: writes tasks
+  end

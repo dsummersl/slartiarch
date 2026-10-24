@@ -19,8 +19,8 @@ instances = ["docs/slarti/instances", "build/generated-architecture.json"]
 
 A directory contributes every `*.yaml`, `*.yml` and `*.json` file beneath it.
 LikeC4 runs only when the `likec4` directory holds a `*.c4` source; a project
-whose structure is entirely hand-written or generated instances needs neither
-Node nor LikeC4.
+whose structure is entirely hand-written or generated instances, or drawn in
+Mermaid (see [mermaid.md](mermaid.md)), needs neither Node nor LikeC4.
 
 ## The schema
 
@@ -67,6 +67,13 @@ relations:
     description: The API reads tasks from the database.
 ```
 
+A node or edge may also name its structural class in `kind`, with the slots that
+class adds: `Participant` (`actor`) and `Message` (`order`, `arrow`) for sequence
+diagrams, `Entity` (`attributes`) and `EntityRelationship` (`source_cardinality`,
+`target_cardinality`, `identifying`) for entity-relationship diagrams. A node may
+also say which element kinds the element it depicts must be, in `element_kinds`
+(`KIND-1`). Both are optional; a plain node or edge needs neither.
+
 Elements and relations may be split across files; `slarti` reads them as one
 architecture. `owns` is the element's half of the ownership seam: a class whose
 `owner` annotation names `todo.api` must appear in `todo.api`'s `owns`
@@ -109,6 +116,7 @@ target node depicts.
 | `DANGLE-3` | An attached edge ends at a node that is ignored or unattached.            |
 | `DANGLE-4` | An edge ends at a node id no diagram declares.                            |
 | `DRAWN-1`  | An element of a kind that must be drawn appears in no diagram (opt-in).   |
+| `KIND-1`   | A node's `element_kinds` names no kind its element is, or descends from.  |
 
 Node and edge findings point at the `location` the producer read, not at the
 instance file. The reverse check is opt-in per element kind: annotate the kind in
@@ -141,6 +149,15 @@ Diagrams, nodes and edges carry a `SourceLocation` whose `file` and `line` point
 at the view's declaration in the `.c4` source, and whose `source_id` is LikeC4's
 own id. Elements are filed under the `.c4` file that declares them. When an
 instance file declares an element with the same id, the instance file wins.
+
+## The built-in Mermaid adapter
+
+The Mermaid adapter is another producer. It parses the sequence and
+entity-relationship diagrams in the files named under `mermaid`, in Python, and
+emits one `Corpus` of diagrams per file. Dispositions are written as Mermaid
+classes and `%% slarti:` comments, so the diagrams render unchanged. Syntax outside
+the supported subset is a finding (`MMD-1`..`MMD-4`). [mermaid.md](mermaid.md)
+documents the subset, the directives and the findings.
 
 ## Malformed input
 

@@ -1,0 +1,6 @@
+sequenceDiagram
+  %% 'worker' has no disposition: nothing attaches or ignores it.
+  %% slarti: attach api todo.api
+  participant api
+  participant worker
+  api->>worker: enqueues

@@ -151,6 +151,31 @@ CHECKS: dict[str, str] = {
         "Remedy: attach a node in some diagram to the element, or drop the annotation "
         "from its kind."
     ),
+    "KIND-1": (
+        "A node drawn as one or more element kinds (a Mermaid class) depicts an element of "
+        "none of them.\n"
+        "Remedy: draw the node as its element's kind, or attach it to an element of the "
+        "kind it is drawn as."
+    ),
+    "MMD-1": (
+        "A configured Mermaid input does not exist.\n"
+        "Remedy: create the file or directory, or remove it from 'mermaid' in the config."
+    ),
+    "MMD-2": (
+        "A Mermaid diagram is of a type slarti cannot read.\n"
+        "Remedy: draw it as a supported type (sequenceDiagram, erDiagram), or move it out "
+        "of the configured Mermaid inputs."
+    ),
+    "MMD-3": (
+        "A Mermaid diagram uses syntax outside the supported subset of its type.\n"
+        "Remedy: rewrite the line with the syntax docs/mermaid.md lists, or move the "
+        "diagram out of the configured Mermaid inputs."
+    ),
+    "MMD-4": (
+        "A '%% slarti:' directive is malformed, or names a node or edge the diagram does "
+        "not draw.\n"
+        "Remedy: write attach, ignore or alias with names the diagram draws."
+    ),
     "ENV-1": (
         "A delegated tool is missing or outside its supported version range.\n"
         "Remedy: run 'slarti doctor' and install a version inside the range."
