@@ -1,0 +1,6 @@
+diagrams:
+  - id: notes.md#flow
+    location: {file: notes.md}
+    nodes:
+      - id: notes.md#flow/a
+        location: {line: 3, source_id: a}

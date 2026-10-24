@@ -1,0 +1,7 @@
+elements:
+  - id: todo.db
+    kind: Database
+    name: Database
+relations:
+  - kind: Reads
+    target: todo.db

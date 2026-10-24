@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from urllib.parse import parse_qs
 
-from slarti import proc, resolvers
+from slarti import proc, resolvers, vocabulary
 from slarti.checks.ownership import owned_classes
 from slarti.config import Config
 from slarti.models import Models
@@ -123,8 +123,18 @@ def linkml_erd_block(models: Models, extra: list[str] | None = None) -> str:
     index = models.config.schema_index()
     if index is None:
         return "_No LinkML schema found._"
-    argv = ["gen-erdiagram", "--format", "mermaid", *(extra or []), str(index)]
-    result = proc.run(argv, cwd=models.config.root)
+    with tempfile.TemporaryDirectory() as tmp:
+        imports = vocabulary.write_importmap(Path(tmp) / "importmap.json")
+        argv = [
+            "gen-erdiagram",
+            "--format",
+            "mermaid",
+            "--importmap",
+            str(imports),
+            *(extra or []),
+            str(index),
+        ]
+        result = proc.run(argv, cwd=models.config.root)
     if result.code != 0:
         return f"_gen-erdiagram failed:_\n{result.stderr or result.stdout}"
     return "```mermaid\n" + result.stdout.strip() + "\n```"

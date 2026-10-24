@@ -1,0 +1,3 @@
+diagrams:
+  - id: notes.md#flow
+    location: {file: notes.md, line: 0}

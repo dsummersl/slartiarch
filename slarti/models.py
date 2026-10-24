@@ -12,7 +12,7 @@ from rdflib import Graph
 from rdflib.namespace import SH
 from rdflib.term import URIRef
 
-from slarti import proc
+from slarti import proc, vocabulary
 from slarti.config import Config
 from slarti.domain import Element, Relation
 
@@ -131,7 +131,7 @@ class Models:
         index = self.config.schema_index()
         if index is None:
             return None
-        return SchemaView(str(index))
+        return SchemaView(str(index), importmap=vocabulary.importmap())
 
     @cached_property
     def _schema_id_map(self) -> dict[str, str]:

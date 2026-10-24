@@ -5,7 +5,7 @@ from pathlib import Path
 
 import typer
 
-from slarti import __version__, docs, env, report, runner, scaffold
+from slarti import __version__, docs, env, report, runner, scaffold, vocabulary
 from slarti import config as config_module
 from slarti.checks import doc_checks
 from slarti.domain import Probe
@@ -135,6 +135,8 @@ def doctor() -> None:
     for probe in probes:
         typer.echo(_probe_line(probe))
         typer.echo(f"     {probe.detail}")
+    typer.echo(f"ok   {'vocabulary':8} {vocabulary.version():10} {vocabulary.SCHEMA}")
+    typer.echo(f"     import as '{vocabulary.IMPORT}' from a project schema")
     failed = any(not p.ok for p in probes)
     raise typer.Exit(EXIT_ENVIRONMENT if failed else EXIT_CLEAN)
 

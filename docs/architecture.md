@@ -169,6 +169,7 @@ graph TB
     Slarti.Registry@{ shape: rectangle, label: "Registry" }
     Slarti.Findings@{ shape: rectangle, label: "Findings" }
     Slarti.Models@{ shape: rectangle, label: "Model adapters" }
+    Slarti.Vocabulary@{ shape: rectangle, label: "Vocabulary" }
   end
   Pyshacl@{ shape: rectangle, label: "pyshacl" }
   Likec4@{ shape: rectangle, label: "LikeC4" }
@@ -180,13 +181,16 @@ graph TB
   Slarti.Cli -. "`regenerates the document`" .-> Slarti.Docsgen
   Slarti.Cli -. "`gates on tool versions`" .-> Slarti.Env
   Slarti.Cli -. "`resolves paths`" .-> Slarti.Settings
+  Slarti.Cli -. "`reports the version`" .-> Slarti.Vocabulary
   Slarti.Cli -. "`scaffolds a new project`" .-> Slarti.Scaffold
   Slarti.Runner -. "`collects findings`" .-> Slarti.Checks
   Slarti.Runner -. "`loads the constraints`" .-> Slarti.Registry
   Slarti.Checks -. "`emits findings`" .-> Slarti.Findings
   Slarti.Checks -. "`reads both models`" .-> Slarti.Models
   Slarti.Docsgen -. "`reads the rules`" .-> Slarti.Registry
+  Slarti.Models -. "`resolves the vocabulary import`" .-> Slarti.Vocabulary
   Slarti.Docsgen -. "`reads the model`" .-> Slarti.Models
+  Slarti.Docsgen -. "`resolves the vocabulary import`" .-> Slarti.Vocabulary
   Slarti.Checks -. "`validates one negative fixture per rule`" .-> Pyshacl
   Slarti.Registry -. "`reads`" .-> Sources
   Slarti.Models -. "`export json`" .-> Likec4

@@ -1,0 +1,7 @@
+# The structural layer alone: what a diagram says, before anyone says what it means.
+diagrams:
+  - id: notes.md#flow
+    location: {file: notes.md}
+    nodes:
+      - id: notes.md#flow/a
+        location: {file: notes.md, source_id: a}
