@@ -117,7 +117,7 @@ def _fences(lines: list[str]) -> Iterator[tuple[int, int]]:
 
 
 def _fenced(file: str, lines: list[str]) -> list[Block]:
-    """Every ``mermaid`` fence outside the regions ``slartiarch docs`` generates."""
+    """Every ``mermaid`` fence outside the regions ``slartiarch check --fix`` generates."""
     fences = enumerate(_fences(lines), start=1)
     return [block(f"{file}#{n}", file, start, lines[start:end]) for n, (start, end) in fences]
 

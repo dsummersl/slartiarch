@@ -25,7 +25,7 @@ mermaid = ["docs/architecture.md", "docs/diagrams-src"]
 - A directory contributes every `*.mmd`, `*.mermaid`, `*.md` and `*.markdown`
   file beneath it.
 - Fences inside a `<!-- slarti:begin … -->` / `<!-- slarti:end … -->` region are
-  never read. `slartiarch docs` generated them from the model, so reading them back
+  never read. `slartiarch check --fix` generated them from the model, so reading them back
   would check the model against itself.
 
 A node's id is its diagram's id, a `/`, and the name the diagram gives it:

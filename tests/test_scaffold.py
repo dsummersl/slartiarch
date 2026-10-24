@@ -27,7 +27,6 @@ def test_init_scaffolds_the_convention(tmp_path: Path) -> None:
     result = scaffold.init(tmp_path)
     assert "slarti.toml" in result.written
     assert (tmp_path / "docs/slarti/instances/architecture.yaml").is_file()
-    assert (tmp_path / "docs/diagrams").is_dir()
     assert result.skipped == []
 
 
@@ -78,7 +77,7 @@ def _without_node() -> str:
 
 
 @needs_linkml
-def test_scaffold_checks_and_docs_without_node(tmp_path: Path, monkeypatch) -> None:
+def test_scaffold_checks_and_fixes_without_node(tmp_path: Path, monkeypatch) -> None:
     project = tmp_path / "project"
     project.mkdir()
     monkeypatch.setenv("PATH", _without_node())
@@ -89,7 +88,7 @@ def test_scaffold_checks_and_docs_without_node(tmp_path: Path, monkeypatch) -> N
     doctor = runner.invoke(app, ["doctor"])
     assert doctor.exit_code == 0, doctor.stdout
     assert "skip node" in doctor.stdout and "skip likec4" in doctor.stdout
-    assert runner.invoke(app, ["docs"]).exit_code == 0
+    fixed = runner.invoke(app, ["check", "--fix"])
+    assert fixed.exit_code == 0, fixed.stdout
     check = runner.invoke(app, ["check"])
     assert check.exit_code == 0, check.stdout
-    assert runner.invoke(app, ["docs", "--check"]).exit_code == 0

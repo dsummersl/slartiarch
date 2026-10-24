@@ -86,7 +86,7 @@ constraints:
     decision: ADR-0003
 
   - id: U3
-    statement: Generation is idempotent — running slarti docs twice produces identical output.
+    statement: Generation is idempotent — running slartiarch check --fix twice produces identical output.
     enforced_by: none
     reason: >-
       Idempotence is a property of a run, not of the model. Verified by a test that
