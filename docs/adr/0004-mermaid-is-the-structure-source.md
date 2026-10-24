@@ -36,9 +36,9 @@ but it tied the structure layer to one methodology and one runtime.
 
 ## Decision
 
-### 1. Vocabulary first
+### Own the semantic vocabulary
 
-`slarti` defines its own vocabulary in LinkML, in two layers.
+`slarti` defines its own LinkML vocabulary:
 
 - **Structural layer — what a diagram says.** `Diagram`, `Node`, `Edge` and
   `SourceLocation` (file, line, Mermaid ID, label), with subclasses added per
@@ -49,88 +49,26 @@ but it tied the structure layer to one methodology and one runtime.
   C4 becomes an optional profile schema that `slarti` ships and a project may
   import. Nothing in `slarti`'s checks assumes it.
 
-The vocabulary ships with `slarti` and is versioned with it. It lands before any
-parser, and the ownership seam (`OWN-*`) is re-expressed against `Element` rather
-than LikeC4 containers.
 
-### 2. Mermaid is the single structure source
+By providing its own definition for diagrams, `slarti` becomes diagram tool agnostic.
 
-`slarti` parses Mermaid into the structural layer. There is one structure source,
-not an adapter per notation, so the spirit of I8 holds: no backend interface, no
-registry of adapters.
+### Adapters
 
-Support is per diagram type and strict:
+Add support for builtin adapters:
 
-- Each supported type has a documented subset and a grammar in Python. No Node at
-  runtime.
-- Syntax outside the subset is a finding, not a silent skip. An unsupported diagram
-  type is a finding unless the diagram is marked out of scope.
-- The supported Mermaid version range is enforced, as I9 already requires for
-  LikeC4 and LinkML.
-- `slarti`'s own CI renders every fixture with mermaid-cli, so the subset is proven
-  to be valid Mermaid. That Node dependency lives in `slarti`'s repository only.
+- change our existing likec4 implementation to an adapter that produces our semantic vocabulary
+- add support for a subset of mermaid diagram types (ER, sequence, C4, to begin).
 
-### 3. Every diagram element gets a disposition
+These adapters produce LinkML - likec4 and mermaid are not conceptually an input to the model that `slarti` operates on. The LinkML produced by these inputs are.
 
-Each structural `Node` and `Edge` must be either **attached** to an architectural
+Support is per diagram type operates on the LinkML language produced (not the diagram tool syntax):
+
+- **Identity** across diagrams resolves on unique IDs plus declared aliases. A
+name that resolves to more than one element is a finding; `slarti` does not guess.
+- Each structural `Node` and `Edge` must be either **attached** to an architectural
 element or **ignored with a reason**. There is no third state. This is the same
 rule the registry applies to constraints: `enforced_by: none` is allowed, but only
 with a reason.
-
-Dispositions are written in native Mermaid wherever possible, so diagrams still
-render unchanged:
-
-- `class` assignments map nodes to element kinds (`class api,db billing`).
-- `%% slarti:` directives cover what the syntax cannot: attach to a named element,
-  ignore with a reason, declare an alias.
-
-```mermaid
-flowchart LR
-    api[Billing API] --> db[(Ledger)]
-    legend[Legend]
-    class api,db billing
-    %% slarti: ignore legend "visual key, not a system element"
-```
-
-**Identity** across diagrams resolves on Mermaid IDs plus declared aliases. A
-name that resolves to more than one element is a finding; `slarti` does not guess.
-
-### 4. Dangling checks run in both directions (I14)
-
-| Direction | Finding |
-| --- | --- |
-| Diagram → vocabulary | A node or edge with no disposition. |
-| Diagram → vocabulary | An edge whose endpoint is ignored or unattached. |
-| Diagram → vocabulary | A directive or alias naming an element that does not exist. |
-| Vocabulary → diagram | An element that no diagram shows. Opt-in per element kind. |
-
-Mermaid creates a node for any unknown name rather than rejecting it, so the first
-check is the one LikeC4's `validate` used to provide. It is now `slarti`'s own, with
-one fixture per direction.
-
-### 5. LikeC4 becomes an input, not a backend
-
-LikeC4 is no longer required. A project that keeps LikeC4 runs
-`likec4 codegen mermaid` and points `slarti` at the output, so it flows through
-the same single parser. How much meaning survives that codegen must be verified
-before LikeC4 support is removed from `slarti` itself; until then, the existing
-adapter stays behind an opt-in.
-
-### 6. Rollout
-
-Each phase ships with valid and invalid fixtures and is dogfooded on `slarti`'s
-own architecture before the next begins.
-
-1. Vocabulary: structural and architectural layers, the C4 profile, and the
-   disposition rules, exercised with hand-written instances.
-2. Flowchart.
-3. Sequence.
-4. State.
-5. ER — checked against the LinkML schema it should agree with, which is a new
-   seam rather than a duplicate of `gen-erdiagram`.
-
-Phase 2 is done when `slarti`'s own architecture, ported from LikeC4 to Mermaid,
-produces the same `slarti check` result as before the port.
 
 ## Consequences
 
@@ -142,14 +80,11 @@ produces the same `slarti check` result as before the port.
   is the cost being removed. Mermaid's syntax moves, so the version gate and the
   rendering check in `slarti`'s CI are load-bearing.
 - LikeC4's validation and views are no longer free. Dangling-relation detection
-  must be rebuilt, and is (§4).
+  must be rebuilt.
 - Authors gain a small new burden: every node needs a disposition. That burden is
   the point — an undeclared box is exactly the drift `slarti` exists to surface.
-- "Comprehensive Mermaid support" is reached one diagram type at a time. Types
-  with no architectural content (pie, Gantt, journey) are never supported, only
-  marked out of scope.
 
-## Alternatives considered
+### Alternatives considered
 
 - **Keep LikeC4 as the only structure source.** Rejected: the runtime and
   methodology costs above are the reason for this ADR.
