@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-from slarti import __version__, resolvers
+from slarti import __version__, resolvers, vocabulary
 from slarti.checks import ownership as ownership_checks
 from slarti.models import Models
 from slarti.registry import Constraint, is_unenforced, kind_text
@@ -272,6 +272,7 @@ class Report:
     def as_json(self) -> str:
         payload = {
             "seam_version": __version__,
+            "vocabulary": {"import": vocabulary.IMPORT, "version": vocabulary.version()},
             "constraints_file": self.constraints_file,
             "enforcer_kinds": _enforcer_catalog(),
             "constraints": [r.as_dict() for r in self.rules],

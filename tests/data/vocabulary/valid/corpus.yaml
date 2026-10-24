@@ -1,0 +1,26 @@
+diagrams:
+  - id: docs/architecture.md#containers
+    location: {file: docs/architecture.md, line: 12}
+    nodes:
+      - id: docs/architecture.md#containers/api
+        location: {file: docs/architecture.md, line: 14, source_id: api, label: API}
+      - id: docs/architecture.md#containers/db
+        location: {file: docs/architecture.md, line: 15, source_id: db, label: Database}
+    edges:
+      - source: docs/architecture.md#containers/api
+        target: docs/architecture.md#containers/db
+        location: {file: docs/architecture.md, line: 16, label: reads}
+elements:
+  - id: todo.api
+    kind: Service
+    name: API
+    aliases: [api, backend]
+    language: python
+  - id: todo.db
+    kind: Database
+    name: Database
+relations:
+  - kind: Reads
+    source: todo.api
+    target: todo.db
+    description: The API reads tasks from the database.

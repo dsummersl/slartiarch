@@ -69,6 +69,10 @@ model {
       }
     }
 
+    vocabulary = container 'Vocabulary' {
+      description 'The LinkML data contract adapters produce: diagrams, nodes, edges, elements, relations.'
+    }
+
     scaffold = container 'Scaffolder' {
       description 'slarti init: the conventional layout, written once, never overwritten.'
     }
@@ -107,6 +111,9 @@ model {
   slarti.docsgen -> slarti.models 'reads the model'
   slarti.docsgen -> slarti.registry 'reads the rules'
   slarti.docsgen -> likec4 'delegates diagram generation'
+  slarti.models -> slarti.vocabulary 'resolves the vocabulary import'
+  slarti.docsgen -> slarti.vocabulary 'resolves the vocabulary import'
+  slarti.cli -> slarti.vocabulary 'reports the version'
   slarti.models -> likec4 'export json'
   slarti.models -> linkml 'SchemaView'
   slarti.env -> likec4 'probes the version'

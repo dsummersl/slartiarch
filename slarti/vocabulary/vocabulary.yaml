@@ -1,0 +1,147 @@
+id: https://dsummersl.github.io/slarti/vocabulary
+name: slarti_vocabulary
+title: The slarti vocabulary
+description: >-
+  The data contract every producer of slarti input conforms to (ADR-0004). The
+  structural layer records what a diagram says and knows no methodology. The
+  architectural layer is the base a project extends, in its own schema, with the
+  kinds of element and relation it means. Import it as `slarti:vocabulary`.
+version: 0.1.0
+license: Apache-2.0
+prefixes:
+  slarti_vocabulary: https://dsummersl.github.io/slarti/vocabulary/
+  linkml: https://w3id.org/linkml/
+default_prefix: slarti_vocabulary
+default_range: string
+imports:
+  - linkml:types
+
+classes:
+  Corpus:
+    description: Every diagram, element and relation one producer emits, checked together.
+    tree_root: true
+    attributes:
+      diagrams:
+        description: The diagrams the producer read.
+        range: Diagram
+        multivalued: true
+        inlined_as_list: true
+      elements:
+        description: The architectural elements the project declares.
+        range: Element
+        multivalued: true
+        inlined_as_list: true
+      relations:
+        description: The architectural relations the project declares.
+        range: Relation
+        multivalued: true
+        inlined_as_list: true
+
+  # Structural layer: what a diagram says.
+
+  SourceLocation:
+    description: Where a diagram, node or edge was written, in the terms of its source.
+    attributes:
+      file:
+        description: The file the construct was read from, relative to the project root.
+        required: true
+      line:
+        description: The line it starts on, when the source can be located.
+        range: integer
+        minimum_value: 1
+      source_id:
+        description: The identifier the construct carries in its own notation.
+      label:
+        description: The text the construct shows when rendered.
+
+  Diagram:
+    description: One diagram, as its notation states it.
+    attributes:
+      id:
+        description: An identifier unique across the corpus.
+        identifier: true
+      location:
+        description: Where the diagram was written.
+        range: SourceLocation
+        inlined: true
+        required: true
+      nodes:
+        description: The nodes the diagram draws.
+        range: Node
+        multivalued: true
+        inlined_as_list: true
+      edges:
+        description: The edges the diagram draws between its nodes.
+        range: Edge
+        multivalued: true
+        inlined_as_list: true
+
+  Node:
+    description: A box, participant or state drawn in a diagram.
+    attributes:
+      id:
+        description: An identifier unique across the corpus.
+        identifier: true
+      location:
+        description: Where the node was written.
+        range: SourceLocation
+        inlined: true
+        required: true
+
+  Edge:
+    description: A line drawn from one node to another.
+    attributes:
+      source:
+        description: The node the edge starts at.
+        range: Node
+        required: true
+      target:
+        description: The node the edge ends at.
+        range: Node
+        required: true
+      location:
+        description: Where the edge was written.
+        range: SourceLocation
+        inlined: true
+        required: true
+
+  # Architectural layer: what the user means. Projects extend these.
+
+  Element:
+    description: A thing in the architecture. A project subclasses it with the kinds it uses.
+    abstract: true
+    attributes:
+      id:
+        description: The permanent identifier the element is resolved by.
+        identifier: true
+      kind:
+        description: The class of the instance, which lets a corpus hold any project kind.
+        designates_type: true
+        range: string
+      name:
+        description: What the element is called.
+        required: true
+      aliases:
+        description: Other names a diagram may use for this element.
+        multivalued: true
+      description:
+        description: What the element is for.
+
+  Relation:
+    description: A directed dependency between two elements. A project subclasses it.
+    abstract: true
+    attributes:
+      kind:
+        description: The class of the instance, which lets a corpus hold any project kind.
+        designates_type: true
+        range: string
+      source:
+        description: The element the relation starts at.
+        range: Element
+        required: true
+      target:
+        description: The element the relation ends at.
+        range: Element
+        required: true
+      description:
+        description: What the relation means.
