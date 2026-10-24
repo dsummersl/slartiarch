@@ -61,7 +61,7 @@ def unverified_table(constraints: list[Constraint]) -> str:
 
 def ownership_table(models: Models) -> str:
     """The ownership seam, rendered: which container owns which entity."""
-    elements = models.likec4.elements
+    elements = models.architecture.elements
     rows = []
     for name in owned_classes(models):
         owner = models.class_annotation(name, "owner")
@@ -72,6 +72,8 @@ def ownership_table(models: Models) -> str:
 
 def render_diagrams(config: Config, outdir: Path) -> dict[str, str]:
     """Delegate diagram generation to `likec4 codegen mermaid` (I2, §6)."""
+    if not config.likec4_enabled():
+        return {}
     argv = proc.likec4(["codegen", "mermaid", "-o", str(outdir), str(config.path("likec4"))])
     result = proc.run(argv, cwd=config.root)
     if result.code != 0:

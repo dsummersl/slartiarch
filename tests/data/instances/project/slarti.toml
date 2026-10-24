@@ -1,0 +1,8 @@
+# A project whose only structure input is hand-written vocabulary instances:
+# no LikeC4, no Node.
+[paths]
+linkml = "schema"
+shacl = "shapes"
+constraints = "constraints.yaml"
+documents = []
+instances = ["architecture"]

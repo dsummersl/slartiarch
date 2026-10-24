@@ -27,15 +27,15 @@ def _slot_exists(models: Models, ref: str) -> bool:
 
 def _relation_exists(models: Models, ref: str) -> bool:
     pair = _split_relation(ref)
-    return pair is not None and models.likec4.has_relation(*pair)
+    return pair is not None and models.architecture.has_relation(*pair)
 
 
 def _relation_absent(models: Models, ref: str) -> bool:
     pair = _split_relation(ref)
     if pair is None:
         return False
-    known = models.likec4.elements
-    return all(part in known for part in pair) and not models.likec4.has_relation(*pair)
+    known = models.architecture.elements
+    return all(part in known for part in pair) and not models.architecture.has_relation(*pair)
 
 
 def absent_relation_violated(models: Models, ref: str) -> bool:
@@ -44,13 +44,14 @@ def absent_relation_violated(models: Models, ref: str) -> bool:
     if pair is None:
         return False
     source, target = pair
-    elements = models.likec4.elements
-    return source in elements and target in elements and models.likec4.has_relation(source, target)
+    model = models.architecture
+    known = source in model.elements and target in model.elements
+    return known and model.has_relation(source, target)
 
 
 def _ownership_holds(models: Models, ref: str) -> bool:
     owner = models.class_annotation(ref, "owner")
-    return owner is not None and owner in models.likec4.elements
+    return owner is not None and owner in models.architecture.elements
 
 
 RESOLVERS: dict[str, Callable[[Models, str], bool]] = {
@@ -61,7 +62,7 @@ RESOLVERS: dict[str, Callable[[Models, str], bool]] = {
     ),
     "likec4_relation": _relation_exists,
     "likec4_absent_relation": _relation_absent,
-    "likec4_element": lambda models, ref: ref in models.likec4.elements,
+    "likec4_element": lambda models, ref: ref in models.architecture.elements,
     "ownership": _ownership_holds,
     "external": lambda models, ref: True,
 }

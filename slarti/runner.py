@@ -28,10 +28,17 @@ def context(config: Config) -> Context:
 
 
 def check(ctx: Context, include_docs: bool = True) -> tuple[Report, bool]:
-    """Delegated validations first, then every slarti check."""
+    """Delegated validations first, then the instance inputs, then every slarti check.
+
+    Malformed instance input stops the run before any seam check reads it."""
     report = Report()
     delegations = delegated.run_all(ctx.config)
     delegated_ok = delegated.report(delegations)
+    malformed = ctx.models.instances.findings
+    if malformed:
+        report.extend(malformed)
+        report.checked = len(delegations) + ctx.models.instances.files
+        return report, delegated_ok
     report.extend(ownership.check(ctx.models))
     report.extend(registry_checks.check(ctx.config, ctx.models, ctx.constraints))
     if include_docs:
@@ -42,7 +49,8 @@ def check(ctx: Context, include_docs: bool = True) -> tuple[Report, bool]:
 
 def _checked(ctx: Context, delegations: int, include_docs: bool) -> int:
     classes = len(ownership.owned_classes(ctx.models))
-    elements = len(ctx.models.likec4.elements)
+    elements = len(ctx.models.architecture.elements)
     docs_count = 4 if include_docs else 0
     seams = len(ctx.constraints) + len(ctx.models.shapes)
-    return delegations + classes + elements + seams + docs_count
+    inputs = ctx.models.instances.files
+    return delegations + inputs + classes + elements + seams + docs_count

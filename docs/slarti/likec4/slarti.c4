@@ -42,7 +42,7 @@ model {
     }
 
     models = container 'Model adapters' {
-      description 'LikeC4 via export json, LinkML via SchemaView, SHACL via rdflib.'
+      description 'LikeC4 via export json, vocabulary instance files, LinkML via SchemaView, SHACL via rdflib.'
       metadata {
         owns 'Element, Relation'
       }

@@ -102,6 +102,22 @@ classes:
 LinkML tools need the same mapping as an importmap:
 `gen-pydantic --importmap <(echo '{"slarti:vocabulary": "<path printed by doctor, minus .yaml>"}') ...`.
 
+### Producing instances directly
+
+The vocabulary is also an input. Any tool that writes instances of it — a
+script, a generator, an adapter for another notation — can feed `slarti`
+directly; name the files under `instances` in the config:
+
+```toml
+[paths]
+instances = ["docs/slarti/instances"]
+```
+
+No plugin API is involved: `slarti` validates the files against the vocabulary
+and reads them alongside, or instead of, LikeC4. See
+[docs/producers.md](docs/producers.md) for the contract: schema location,
+YAML/JSON serialization, required `SourceLocation` fields and versioning.
+
 ### The C4 profile
 
 C4 is an optional profile, not the model. A project that draws its architecture

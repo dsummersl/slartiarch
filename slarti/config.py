@@ -21,6 +21,9 @@ DEFAULTS: dict[str, str] = {
 
 DOCUMENTS_DEFAULT: list[str] = ["docs/architecture.md"]
 
+# Path keys whose value is a list of paths rather than a single path.
+LIST_KEYS = ("documents", "instances")
+
 
 class ConfigError(Exception):
     """Raised when slarti.toml is missing or malformed."""
@@ -33,9 +36,18 @@ class Config:
     root: Path
     paths: dict[str, str] = field(default_factory=lambda: dict(DEFAULTS))
     documents: list[str] = field(default_factory=lambda: list(DOCUMENTS_DEFAULT))
+    instances: list[str] = field(default_factory=list)
 
     def path(self, key: str) -> Path:
         return self.root / self.paths[key]
+
+    def likec4_enabled(self) -> bool:
+        """The LikeC4 adapter runs only when its directory holds a ``*.c4`` source."""
+        directory = self.path("likec4")
+        return directory.is_dir() and any(directory.rglob("*.c4"))
+
+    def instance_paths(self) -> list[Path]:
+        return [self.root / i for i in self.instances]
 
     def document_paths(self) -> list[Path]:
         return [self.root / d for d in self.documents]
@@ -74,20 +86,21 @@ def find_root(start: Path) -> Path | None:
     return None
 
 
-def _merge(raw: dict[str, Any], source_label: str) -> tuple[dict[str, str], list[str]]:
+def _from_raw(root: Path, raw: dict[str, Any], source_label: str) -> Config:
     configured = raw.get("paths", {})
-    unknown = sorted(set(configured) - set(DEFAULTS) - {"documents"})
+    unknown = sorted(set(configured) - set(DEFAULTS) - set(LIST_KEYS))
     if unknown:
         raise ConfigError(f"Unknown path keys in {source_label}: {', '.join(unknown)}")
-    docs = _merge_documents(configured.get("documents"))
-    path_keys = {k: str(v) for k, v in configured.items() if k != "documents"}
+    docs = _merge_list(configured.get("documents"), DOCUMENTS_DEFAULT)
+    instances = _merge_list(configured.get("instances"), [])
+    path_keys = {k: str(v) for k, v in configured.items() if k not in LIST_KEYS}
     paths = dict(DEFAULTS) | path_keys
-    return paths, docs
+    return Config(root=root, paths=paths, documents=docs, instances=instances)
 
 
-def _merge_documents(raw: Any) -> list[str]:
+def _merge_list(raw: Any, default: list[str]) -> list[str]:
     if raw is None:
-        return list(DOCUMENTS_DEFAULT)
+        return list(default)
     if isinstance(raw, list):
         return [str(item) for item in raw]
     return [str(raw)]
@@ -105,14 +118,12 @@ def _find_pyproject_root(start: Path) -> Path | None:
 
 def _load_toml(root: Path, name: str, source_label: str) -> Config:
     raw: dict[str, Any] = tomllib.loads((root / name).read_text(encoding="utf-8"))
-    paths, docs = _merge(raw, source_label)
-    return Config(root=root, paths=paths, documents=docs)
+    return _from_raw(root, raw, source_label)
 
 
 def _load_pyproject(root: Path) -> Config:
     raw: dict[str, Any] = tomllib.loads((root / PYPROJECT_NAME).read_text(encoding="utf-8"))
-    paths, docs = _merge(raw["tool"]["slartiarch"], f"{PYPROJECT_NAME} [tool.slartiarch]")
-    return Config(root=root, paths=paths, documents=docs)
+    return _from_raw(root, raw["tool"]["slartiarch"], f"{PYPROJECT_NAME} [tool.slartiarch]")
 
 
 def load(start: Path | None = None) -> Config:

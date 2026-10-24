@@ -1,0 +1,39 @@
+id: https://example.org/todo
+name: todo
+description: A todo service, described by hand-written vocabulary instances.
+prefixes:
+  todo: https://example.org/todo/
+  linkml: https://w3id.org/linkml/
+  slarti: https://dsummersl.github.io/slarti/
+default_prefix: todo
+default_range: string
+imports:
+  - linkml:types
+  - slarti:vocabulary
+classes:
+  Service:
+    description: A process that serves requests.
+    is_a: Element
+    annotations:
+      owner: todo.api
+  Database:
+    description: A store of record.
+    is_a: Element
+    annotations:
+      owner: todo.db
+  Reads:
+    description: One element reads data from another.
+    is_a: Relation
+    annotations:
+      owner: todo.api
+  Task:
+    description: Something a user means to do.
+    annotations:
+      owner: todo.api
+    attributes:
+      id:
+        description: The task's permanent identifier.
+        identifier: true
+      title:
+        description: What the task is.
+        required: true
