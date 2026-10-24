@@ -53,7 +53,7 @@ def test_instances_join_the_architecture(tmp_path: Path) -> None:
     assert sorted(architecture.elements) == ["todo.api", "todo.db"]
     assert architecture.elements["todo.api"].owns == ["Reads", "Service", "Task"]
     assert architecture.has_relation("todo.api", "todo.db")
-    assert models.element_file("todo.db") == "architecture/containers.yaml"
+    assert models.vocabulary.element_files["todo.db"] == "architecture/containers.yaml"
     assert models.instances.findings == []
 
 

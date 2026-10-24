@@ -2,8 +2,8 @@ id: https://dsummersl.github.io/slarti
 name: slarti
 title: The slarti domain
 description: >-
-  The entities slarti reasons about. Every class names the container that owns it;
-  every owning container claims it back (OWN-1..OWN-5).
+  The entities slarti reasons about. Every class names the element that owns it;
+  every owning element claims it back (OWN-1..OWN-5).
 prefixes:
   slarti: https://dsummersl.github.io/slarti/
   linkml: https://w3id.org/linkml/
@@ -149,7 +149,7 @@ classes:
         description: The schema class a YAML fixture instantiates.
 
   Element:
-    description: A LikeC4 element, and the entities it claims to own.
+    description: An architectural element, as a vocabulary instance, and the classes it owns.
     annotations:
       owner: slarti.models
     attributes:
@@ -160,7 +160,7 @@ classes:
         description: The element's display title.
         required: true
       kind:
-        description: The element kind declared in the specification block.
+        description: The element's kind, as its producer declares it.
         required: true
       owns:
         description: The schema classes this element claims.
@@ -168,7 +168,7 @@ classes:
         required: true
 
   Relation:
-    description: A relation between two LikeC4 elements.
+    description: A relation between two architectural elements.
     annotations:
       owner: slarti.models
     attributes:

@@ -27,6 +27,9 @@ class Corpus:
     findings: list[Finding] = field(default_factory=list)
     files: int = 0
 
+    def owners_of(self, entity: str) -> list[str]:
+        return sorted(e.id for e in self.elements.values() if entity in (e.owns or []))
+
 
 def files_for(path: Path) -> list[Path]:
     """The instance files a configured path names: the file, or a directory's files."""

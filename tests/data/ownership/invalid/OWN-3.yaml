@@ -1,0 +1,22 @@
+# Class side: Task's owner exists but does not claim it.
+id: https://example.org/todo
+name: todo
+prefixes:
+  todo: https://example.org/todo/
+  linkml: https://w3id.org/linkml/
+  slarti: https://dsummersl.github.io/slarti/
+default_prefix: todo
+default_range: string
+imports:
+  - linkml:types
+  - slarti:vocabulary
+classes:
+  Service:
+    is_a: Element
+    annotations: {owner: todo.api}
+  Task:
+    annotations: {owner: todo.api}
+---
+elements:
+  - {id: todo.api, kind: Service, name: API, owns: [Service]}
+  - {id: todo.db, kind: Service, name: Database, owns: []}

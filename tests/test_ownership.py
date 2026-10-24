@@ -2,8 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
+from slarti import config as config_module
 from slarti.checks import ownership
+from slarti.models import Models
 from tests.conftest import SCHEMA, make_models
+
+FIXTURES = Path(__file__).parent / "data" / "ownership"
+RULES = [f"OWN-{n}" for n in range(1, 6)]
 
 NO_OWNER = SCHEMA.replace("    annotations:\n      owner: todo.api\n", "")
 WRONG_OWNER = SCHEMA.replace("owner: todo.api", "owner: todo.nowhere")
@@ -39,9 +46,9 @@ def test_own4_element_claims_an_unknown_entity(tmp_path: Path) -> None:
     assert "Ghost" in findings[0].message
 
 
-def test_own5_two_containers_claim_the_same_class(tmp_path: Path) -> None:
+def test_own5_two_elements_claim_the_same_class(tmp_path: Path) -> None:
     models = make_models(tmp_path)
-    claimed = models.architecture.elements
+    claimed = models.likec4.elements
     claimed["todo.db"] = claimed["todo.db"].model_copy(update={"owns": ["Task"]})
     findings = ownership.check(models)
     assert ids(findings) == ["OWN-5"]
@@ -52,3 +59,39 @@ def test_every_finding_is_complete(tmp_path: Path) -> None:
     assert findings
     for finding in findings:
         assert finding.id and finding.file and finding.remedy and finding.subject
+
+
+def fixture_models(tmp_path: Path, kind: str, rule: str) -> Models:
+    schema, corpus = (FIXTURES / kind / f"{rule}.yaml").read_text().split("\n---\n")
+    for name, text in (("schema/todo.yaml", schema), ("architecture/corpus.yaml", corpus)):
+        (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / name).write_text(text, encoding="utf-8")
+    (tmp_path / "slarti.toml").write_text(
+        '[paths]\nlinkml = "schema"\ndocuments = []\ninstances = ["architecture"]\n',
+        encoding="utf-8",
+    )
+    models = Models(config=config_module.load(tmp_path))
+    assert models.instances.findings == []
+    assert not models.config.likec4_enabled()
+    return models
+
+
+@pytest.mark.parametrize("rule", RULES)
+def test_invalid_fixture_fires_its_rule(tmp_path: Path, rule: str) -> None:
+    findings = ownership.check(fixture_models(tmp_path, "invalid", rule))
+    assert ids(findings) == [rule]
+    assert findings[0].file in ("schema/todo.yaml", "architecture/corpus.yaml")
+
+
+@pytest.mark.parametrize("rule", RULES)
+def test_valid_fixture_is_silent(tmp_path: Path, rule: str) -> None:
+    assert ownership.check(fixture_models(tmp_path, "valid", rule)) == []
+
+
+def test_findings_stay_in_domain_terms(tmp_path: Path) -> None:
+    for rule in RULES:
+        root = tmp_path / rule
+        root.mkdir()
+        for finding in ownership.check(fixture_models(root, "invalid", rule)):
+            text = f"{finding.message} {finding.remedy}".lower()
+            assert "likec4" not in text and "container" not in text and "metadata" not in text

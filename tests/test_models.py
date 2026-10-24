@@ -4,6 +4,7 @@ from pathlib import Path
 
 from slarti import models as models_module
 from slarti import report
+from tests.conftest import make_models
 
 PAYLOAD = {
     "elements": {
@@ -45,10 +46,14 @@ def test_export_payload_is_parsed_and_sorted() -> None:
     assert model.views == ("index",)
 
 
-def test_owners_of_reads_the_seam_backwards() -> None:
-    model = models_module.parse_likec4(PAYLOAD)
-    assert model.owners_of("Task") == ["todo.db"]
-    assert model.owners_of("Ghost") == []
+def test_likec4_reaches_checks_only_as_vocabulary_instances(tmp_path: Path) -> None:
+    models = make_models(tmp_path)
+    corpus = models.vocabulary
+    assert sorted(corpus.elements) == ["todo", "todo.api", "todo.db"]
+    assert corpus.element_files["todo.api"] == models.config.paths["likec4"]
+    assert corpus.owners_of("Task") == ["todo.api"]
+    assert corpus.owners_of("Ghost") == []
+    assert models.architecture.elements == corpus.elements
 
 
 def test_shape_names_are_curies(tmp_path: Path) -> None:

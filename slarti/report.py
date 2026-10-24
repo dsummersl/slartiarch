@@ -26,25 +26,25 @@ def _layer_for(kind: str | None) -> int | None:
 
 CHECKS: dict[str, str] = {
     "OWN-1": (
-        "A schema class declares no owning container.\n"
-        "Remedy: add 'annotations: {owner: <likec4-element-id>}' to the class, and list the "
-        "class under that element's 'owns' metadata."
+        "A schema class declares no owning element.\n"
+        "Remedy: add 'annotations: {owner: <element-id>}' to the class, and list the "
+        "class in that element's 'owns'."
     ),
     "OWN-2": (
-        "A schema class names an owner that is not an element in the LikeC4 model.\n"
-        "Remedy: correct the owner annotation, or add the element to the model."
+        "A schema class names an owner that is not an element in the architecture.\n"
+        "Remedy: correct the owner annotation, or declare the element."
     ),
     "OWN-3": (
         "A schema class names an owner that does not claim it back.\n"
-        "Remedy: add the class name to that element's 'owns' metadata."
+        "Remedy: add the class name to that element's 'owns'."
     ),
     "OWN-4": (
-        "A LikeC4 element claims an entity that is not a class in the schema.\n"
-        "Remedy: remove the entity from 'owns', or add the class to the schema."
+        "An element claims a class that is not in the schema.\n"
+        "Remedy: remove the class from 'owns', or add the class to the schema."
     ),
     "OWN-5": (
-        "A schema class is claimed by more than one container.\n"
-        "Remedy: leave the class in exactly one element's 'owns' metadata."
+        "A schema class is claimed by more than one element.\n"
+        "Remedy: leave the class in exactly one element's 'owns'."
     ),
     "REG-1": (
         "A constraint declares an enforcer that does not resolve in the model.\n"
@@ -365,7 +365,7 @@ def _ownership(models: Models) -> list[Owned]:
         Owned(
             name=name,
             owner=models.class_annotation(name, ownership_checks.OWNER_ANNOTATION),
-            claimed_by=models.architecture.owners_of(name),
+            claimed_by=models.vocabulary.owners_of(name),
         )
         for name in ownership_checks.owned_classes(models)
     ]

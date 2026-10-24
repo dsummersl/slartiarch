@@ -20,7 +20,7 @@ app = typer.Typer(
         "\n"
         "slartiarch checks consistency between LikeC4 diagrams, LinkML schemas,\n"
         "and SHACL shapes. It owns the seams — the joins neither tool can see:\n"
-        "  • LikeC4 ↔ LinkML — the ownership seam (OWN-1..OWN-5)\n"
+        "  • Elements ↔ LinkML — the ownership seam (OWN-1..OWN-5)\n"
         "  • Document ↔ models  — the drift gate (DOC-1..DOC-4)\n"
         "  • Document ↔ rules  — the constraint registry (REG-1..REG-7)\n"
         "  • Instance inputs   — vocabulary instances any tool may produce (INP-1..INP-3)\n"

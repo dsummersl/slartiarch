@@ -69,7 +69,7 @@ class LinkMLMeta(RootModel):
 linkml_meta = LinkMLMeta({'default_prefix': 'slarti',
      'default_range': 'string',
      'description': 'The entities slarti reasons about. Every class names the '
-                    'container that owns it; every owning container claims it back '
+                    'element that owns it; every owning element claims it back '
                     '(OWN-1..OWN-5).',
      'id': 'https://dsummersl.github.io/slarti',
      'imports': ['linkml:types'],
@@ -204,20 +204,20 @@ class Enforcer(ConfiguredBaseModel):
 
 class Element(ConfiguredBaseModel):
     """
-    A LikeC4 element, and the entities it claims to own.
+    An architectural element, as a vocabulary instance, and the classes it owns.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.models'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
     id: str = Field(default=..., description="""The fully qualified element identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'Element']} })
     title: str = Field(default=..., description="""The element's display title.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element', 'Relation']} })
-    kind: str = Field(default=..., description="""The element kind declared in the specification block.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element']} })
+    kind: str = Field(default=..., description="""The element's kind, as its producer declares it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element']} })
     owns: list[str] = Field(default=..., description="""The schema classes this element claims.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element']} })
 
 
 class Relation(ConfiguredBaseModel):
     """
-    A relation between two LikeC4 elements.
+    A relation between two architectural elements.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.models'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
