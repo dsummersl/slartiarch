@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from functools import cache
 from pathlib import Path
 
@@ -17,6 +18,18 @@ def importmap() -> dict[str, str]:
     """Resolve the vocabulary's and each profile's import name to the copy in this package."""
     schemas = {IMPORT: SCHEMA, **PROFILES}
     return {name: str(path.with_suffix("")) for name, path in schemas.items()}
+
+
+_PREFIX_LINE = re.compile(r"^(\s+slarti:\s*).*$", re.MULTILINE)
+
+
+def localised(text: str) -> str:
+    """A schema's text with the ``slarti`` prefix pointing at this package.
+
+    For tools that resolve imports but take no importmap, such as ``linkml lint``."""
+    if not any(name in text for name in importmap()):
+        return text
+    return _PREFIX_LINE.sub(lambda m: m.group(1) + SCHEMA.parent.as_uri() + "/", text)
 
 
 def write_importmap(target: Path) -> Path:
@@ -45,6 +58,7 @@ __all__ = [
     "PROFILES",
     "SCHEMA",
     "importmap",
+    "localised",
     "profile_versions",
     "version",
     "write_importmap",

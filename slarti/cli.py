@@ -23,6 +23,7 @@ app = typer.Typer(
         "  • LikeC4 ↔ LinkML — the ownership seam (OWN-1..OWN-5)\n"
         "  • Document ↔ models  — the drift gate (DOC-1..DOC-4)\n"
         "  • Document ↔ rules  — the constraint registry (REG-1..REG-7)\n"
+        "  • Instance inputs   — vocabulary instances any tool may produce (INP-1..INP-3)\n"
         "Everything else — parsing, validation, rendering — is delegated.\n"
         "\n"
         "Project layout (``slarti init`` scaffolds this):\n"
@@ -64,8 +65,8 @@ def _load() -> config_module.Config:
     return _load_config()
 
 
-def _gate() -> None:
-    probes = env.probe_all()
+def _gate(cfg: config_module.Config) -> None:
+    probes = env.probe_all(likec4=cfg.likec4_enabled())
     failures = env.env_findings(probes)
     if failures:
         for finding in failures:
@@ -75,7 +76,7 @@ def _gate() -> None:
 
 def _context() -> runner.Context:
     cfg = _load()
-    _gate()
+    _gate(cfg)
     try:
         return runner.context(cfg)
     except (RegistryError, ModelError) as exc:
@@ -92,6 +93,7 @@ _PATH_DESCRIPTIONS: dict[str, str] = {
     "shacl_invalid": "Fixtures that must violate rules (one per rule)",
     "constraints": "Rule registry connecting rules to enforcers",
     "documents": "Architecture documents to generate",
+    "instances": "Vocabulary instance files or directories (*.yaml, *.yml, *.json)",
     "diagrams": "Generated diagram images",
 }
 
@@ -120,9 +122,9 @@ def _show_paths(cfg: config_module.Config) -> None:
     for key, value in sorted(cfg.paths.items()):
         desc = _PATH_DESCRIPTIONS.get(key, "")
         typer.echo(f"  {key:16} {value:40} {desc}")
-    if cfg.documents:
-        desc = _PATH_DESCRIPTIONS.get("documents", "")
-        typer.echo(f"  {'documents':16} {str(cfg.documents):40} {desc}")
+    for key, values in (("documents", cfg.documents), ("instances", cfg.instances)):
+        if values:
+            typer.echo(f"  {key:16} {str(values):40} {_PATH_DESCRIPTIONS[key]}")
 
 
 @app.command()
@@ -154,7 +156,8 @@ def check(
     json_output: bool = typer.Option(False, "--json", help="Structured findings on stdout."),
     skip_docs: bool = typer.Option(False, "--no-docs", help="Skip the DOC-* checks."),
 ) -> None:
-    """Validate model sources against all rules. Use --json. IDs: OWN-*, REG-*, DOC-*, ENV-*."""
+    """Validate model sources against all rules. Use --json.
+    IDs: INP-*, OWN-*, REG-*, DOC-*, ENV-*."""
     ctx = _context()
     report, delegated_ok = runner.check(ctx, include_docs=not skip_docs)
     typer.echo(report.as_json_verbose() if json_output else report.as_text())

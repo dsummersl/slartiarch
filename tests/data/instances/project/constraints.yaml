@@ -1,0 +1,16 @@
+constraints:
+  - id: T1
+    statement: The API owns tasks.
+    enforced_by:
+      kind: ownership
+      ref: Task
+  - id: T2
+    statement: The API reads from the database.
+    enforced_by:
+      kind: likec4_relation
+      ref: "todo.api -> todo.db"
+  - id: T3
+    statement: Every task has a title.
+    enforced_by:
+      kind: linkml_slot
+      ref: Task.title

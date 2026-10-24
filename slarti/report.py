@@ -95,6 +95,19 @@ CHECKS: dict[str, str] = {
         "A constraint in the registry has no row in the generated tables.\n"
         "Remedy: this is a generation bug in slarti; report it with the registry entry."
     ),
+    "INP-1": (
+        "A configured instance input does not exist.\n"
+        "Remedy: create the file or directory, or remove it from 'instances' in the config."
+    ),
+    "INP-2": (
+        "An instance file is not a YAML or JSON mapping.\n"
+        "Remedy: write the file as a mapping with diagrams, elements and relations."
+    ),
+    "INP-3": (
+        "An instance file does not conform to the vocabulary or the project schema.\n"
+        "Remedy: correct the instance so it validates as 'Corpus', or declare the missing "
+        "kind in the project schema."
+    ),
     "ENV-1": (
         "A delegated tool is missing or outside its supported version range.\n"
         "Remedy: run 'slarti doctor' and install a version inside the range."
@@ -352,7 +365,7 @@ def _ownership(models: Models) -> list[Owned]:
         Owned(
             name=name,
             owner=models.class_annotation(name, ownership_checks.OWNER_ANNOTATION),
-            claimed_by=models.likec4.owners_of(name),
+            claimed_by=models.architecture.owners_of(name),
         )
         for name in ownership_checks.owned_classes(models)
     ]

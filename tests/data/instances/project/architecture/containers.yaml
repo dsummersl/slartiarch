@@ -1,0 +1,22 @@
+# Written by hand; any tool that emits this shape is an equally valid producer.
+diagrams:
+  - id: notes.md#containers
+    location: {file: notes.md, line: 3}
+    nodes:
+      - id: notes.md#containers/api
+        location: {file: notes.md, line: 5, source_id: api, label: API}
+      - id: notes.md#containers/db
+        location: {file: notes.md, line: 6, source_id: db, label: Database}
+    edges:
+      - source: notes.md#containers/api
+        target: notes.md#containers/db
+        location: {file: notes.md, line: 7, label: reads}
+elements:
+  - id: todo.api
+    kind: Service
+    name: API
+    owns: [Service, Reads, Task]
+  - id: todo.db
+    kind: Database
+    name: Database
+    owns: [Database]

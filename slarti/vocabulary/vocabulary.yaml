@@ -6,7 +6,7 @@ description: >-
   structural layer records what a diagram says and knows no methodology. The
   architectural layer is the base a project extends, in its own schema, with the
   kinds of element and relation it means. Import it as `slarti:vocabulary`.
-version: 0.1.0
+version: 0.2.0
 license: Apache-2.0
 prefixes:
   slarti_vocabulary: https://dsummersl.github.io/slarti/vocabulary/
@@ -126,6 +126,9 @@ classes:
         multivalued: true
       description:
         description: What the element is for.
+      owns:
+        description: The project schema classes this element is responsible for.
+        multivalued: true
 
   Relation:
     description: A directed dependency between two elements. A project subclasses it.

@@ -69,7 +69,7 @@ strict = true
 packages = ["slarti"]
 
 [[tool.mypy.overrides]]
-module = ["linkml_runtime.*"]
+module = ["linkml_runtime.*", "linkml.*"]
 ignore_missing_imports = true
 
 # GENERATED code: the schema is reviewed, the projection of it is not.

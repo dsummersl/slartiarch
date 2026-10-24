@@ -109,9 +109,16 @@ def probe_python() -> Probe:
     return _probe("python", version, sys.executable, detail, ok)
 
 
-def probe_all(cwd: Path | None = None) -> list[Probe]:
-    """Probe every delegated tool once. Cached in-process only by the caller (I4)."""
-    return [probe_python(), *(probe(req, cwd) for req in REQUIREMENTS)]
+# Tools only the LikeC4 adapter needs.
+LIKEC4_TOOLS = ("node", "likec4")
+
+
+def probe_all(cwd: Path | None = None, likec4: bool = True) -> list[Probe]:
+    """Probe every delegated tool once. Cached in-process only by the caller (I4).
+
+    Without ``likec4``, the tools only the LikeC4 adapter needs are not probed."""
+    required = [r for r in REQUIREMENTS if likec4 or r.tool not in LIKEC4_TOOLS]
+    return [probe_python(), *(probe(req, cwd) for req in required)]
 
 
 def env_findings(probes: list[Probe]) -> list[Finding]:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from slarti.findings import Finding, Severity
-from slarti.models import Likec4Model, Models
+from slarti.models import Architecture, Models
 
 OWNER_ANNOTATION = "owner"
 
@@ -64,7 +64,7 @@ def _unclaimed(name: str, owner: str, schema_file: str) -> Finding:
     )
 
 
-def _class_findings(models: Models, model: Likec4Model) -> list[Finding]:
+def _class_findings(models: Models, model: Architecture) -> list[Finding]:
     findings = []
     for name in owned_classes(models):
         owner = models.class_annotation(name, OWNER_ANNOTATION)
@@ -78,7 +78,7 @@ def _class_findings(models: Models, model: Likec4Model) -> list[Finding]:
     return findings
 
 
-def _element_findings(models: Models, model: Likec4Model, arch_dir: str) -> list[Finding]:
+def _element_findings(models: Models, model: Architecture) -> list[Finding]:
     known = set(owned_classes(models))
     findings = []
     for element in sorted(model.elements.values(), key=lambda e: e.id):
@@ -88,7 +88,7 @@ def _element_findings(models: Models, model: Likec4Model, arch_dir: str) -> list
                     Finding(
                         id="OWN-4",
                         severity=Severity.error,
-                        file=arch_dir,
+                        file=models.element_file(element.id),
                         subject=element.id,
                         message=(
                             f"element '{element.id}' claims entity '{entity}', "
@@ -103,7 +103,7 @@ def _element_findings(models: Models, model: Likec4Model, arch_dir: str) -> list
     return findings
 
 
-def _double_claim_findings(models: Models, model: Likec4Model, arch_dir: str) -> list[Finding]:
+def _double_claim_findings(models: Models, model: Architecture) -> list[Finding]:
     findings = []
     for name in owned_classes(models):
         owners = model.owners_of(name)
@@ -112,7 +112,7 @@ def _double_claim_findings(models: Models, model: Likec4Model, arch_dir: str) ->
                 Finding(
                     id="OWN-5",
                     severity=Severity.error,
-                    file=arch_dir,
+                    file=models.element_file(owners[0]),
                     subject=name,
                     message=(
                         f"class '{name}' is claimed by more than one element: "
@@ -127,10 +127,9 @@ def _double_claim_findings(models: Models, model: Likec4Model, arch_dir: str) ->
 
 def check(models: Models) -> list[Finding]:
     """OWN-1..OWN-5: the ownership seam, checked in both directions (I14)."""
-    arch_dir = models.config.paths["likec4"]
-    model = models.likec4
+    model = models.architecture
     return [
         *_class_findings(models, model),
-        *_element_findings(models, model, arch_dir),
-        *_double_claim_findings(models, model, arch_dir),
+        *_element_findings(models, model),
+        *_double_claim_findings(models, model),
     ]

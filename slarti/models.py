@@ -12,7 +12,7 @@ from rdflib import Graph
 from rdflib.namespace import SH
 from rdflib.term import URIRef
 
-from slarti import proc, vocabulary
+from slarti import instances, proc, vocabulary
 from slarti.config import Config
 from slarti.domain import Element, Relation
 
@@ -22,8 +22,8 @@ class ModelError(Exception):
 
 
 @dataclass(frozen=True)
-class Likec4Model:
-    """The LikeC4 model as exported by `likec4 export json`."""
+class Architecture:
+    """Architectural elements and relations, from LikeC4's export or instance files."""
 
     elements: dict[str, Element]
     relations: tuple[Relation, ...]
@@ -63,14 +63,14 @@ def _relation(raw: dict[str, object]) -> Relation:
     )
 
 
-def parse_likec4(payload: dict[str, object]) -> Likec4Model:
+def parse_likec4(payload: dict[str, object]) -> Architecture:
     """Build the model from a `likec4 export json` payload."""
     raw_elements = _mapping(payload, "elements")
     raw_relations = _mapping(payload, "relations")
     elements = {key: _element(value) for key, value in sorted(raw_elements.items())}
     relations = tuple(_relation(raw_relations[key]) for key in sorted(raw_relations))
     views = tuple(sorted(_mapping(payload, "views")))
-    return Likec4Model(elements=elements, relations=relations, views=views)
+    return Architecture(elements=elements, relations=relations, views=views)
 
 
 def _mapping(payload: dict[str, object], key: str) -> dict[str, dict[str, object]]:
@@ -80,8 +80,13 @@ def _mapping(payload: dict[str, object], key: str) -> dict[str, dict[str, object
     return raw
 
 
-def export_likec4(config: Config) -> Likec4Model:
-    """Invoke `likec4 export json` and parse the result."""
+EMPTY = Architecture(elements={}, relations=(), views=())
+
+
+def export_likec4(config: Config) -> Architecture:
+    """Invoke `likec4 export json` and parse the result; empty when LikeC4 is not used."""
+    if not config.likec4_enabled():
+        return EMPTY
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "model.json"
         argv = proc.likec4(["export", "json", "-o", str(out), str(config.path("likec4"))])
@@ -118,13 +123,31 @@ class Models:
     """Lazily loaded views of both backends, plus the SHACL shapes."""
 
     config: Config
-    _likec4: Likec4Model | None = field(default=None, repr=False)
+    _likec4: Architecture | None = field(default=None, repr=False)
 
     @property
-    def likec4(self) -> Likec4Model:
+    def likec4(self) -> Architecture:
         if self._likec4 is None:
             self._likec4 = export_likec4(self.config)
         return self._likec4
+
+    @cached_property
+    def instances(self) -> instances.Corpus:
+        return instances.load(self.config)
+
+    @cached_property
+    def architecture(self) -> Architecture:
+        """LikeC4's elements and relations merged with every instance file's."""
+        corpus = self.instances
+        return Architecture(
+            elements=self.likec4.elements | corpus.elements,
+            relations=self.likec4.relations + tuple(corpus.relations),
+            views=self.likec4.views,
+        )
+
+    def element_file(self, element_id: str) -> str:
+        """The file that declares an element: its instance file, or the LikeC4 sources."""
+        return self.instances.element_files.get(element_id, self.config.paths["likec4"])
 
     @cached_property
     def schema(self) -> SchemaView | None:
