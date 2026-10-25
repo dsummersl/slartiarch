@@ -4,7 +4,7 @@ Date: 2026-10-24
 
 ## Status
 
-Proposed
+Accepted
 
 Supersedes invariant I8 of `docs/specs/slarti-project.md` and replaces the non-goal
 "Not pluggable" with "No plugin API".

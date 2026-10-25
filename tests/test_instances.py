@@ -125,6 +125,13 @@ def test_lint_resolves_the_vocabulary_without_the_network() -> None:
     assert vocabulary.localised("id: x\n") == "id: x\n"
 
 
+def test_lint_localises_a_schema_imported_beside_the_vocabulary() -> None:
+    text = "prefixes:\n  slarti: https://dsummersl.github.io/slarti/\n"
+    assert not vocabulary.imports_vocabulary(text)
+    local = vocabulary.localised(text, force=True)
+    assert f"slarti: {vocabulary.SCHEMA.parent.as_uri()}/" in local
+
+
 @needs_linkml
 def test_check_runs_on_hand_written_instances_alone(tmp_path: Path, monkeypatch) -> None:
     cfg = project(tmp_path)

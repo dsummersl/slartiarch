@@ -118,11 +118,31 @@ def _erd_opt(key: str, val: str) -> list[str]:
     return [f"--{key.replace('_', '-')}", val]
 
 
+def _project_classes(models: Models) -> list[str]:
+    """``--classes`` flags for the classes the project's own schema files declare."""
+    view = models.schema
+    if view is None:
+        return []
+    names = sorted(
+        name
+        for name, cls in view.all_classes(imports=True).items()
+        if cls.from_schema in models.schema_id_set
+    )
+    return _classes_flags(",".join(names))
+
+
+def _erd_args(models: Models, extra: list[str] | None) -> list[str]:
+    """The caller's options, defaulting ``--classes`` to the project's own classes."""
+    args = list(extra or [])
+    return args if "--classes" in args else args + _project_classes(models)
+
+
 def linkml_erd_block(models: Models, extra: list[str] | None = None) -> str:
     """Generate a Mermaid ER diagram from the LinkML schema via gen-erdiagram.
 
     ``extra`` is a list of additional CLI arguments forwarded to gen-erdiagram
-    (e.g. ``["--classes", "Task,Report"]``).
+    (e.g. ``["--classes", "Task,Report"]``). Without ``--classes`` the diagram shows
+    the project's own classes, not those of an imported schema such as the vocabulary.
     """
     index = models.config.schema_index()
     if index is None:
@@ -135,7 +155,7 @@ def linkml_erd_block(models: Models, extra: list[str] | None = None) -> str:
             "mermaid",
             "--importmap",
             str(imports),
-            *(extra or []),
+            *_erd_args(models, extra),
             str(index),
         ]
         result = proc.run(argv, cwd=models.config.root)

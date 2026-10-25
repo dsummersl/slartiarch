@@ -141,7 +141,7 @@ class Finding(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.findings'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
-    id: str = Field(default=..., description="""A stable check ID such as OWN-1; retired IDs are never reused.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'Element']} })
+    id: str = Field(default=..., description="""A stable check ID such as OWN-1; retired IDs are never reused.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'ModelElement']} })
     severity: Severity = Field(default=..., description="""Whether the finding fails the build.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding']} })
     file: str = Field(default=..., description="""The file the finding is about.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding']} })
     line: Optional[int] = Field(default=None, description="""The line in that file, when the source can be located.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'Region']} })
@@ -181,7 +181,7 @@ class Constraint(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.registry'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
-    id: str = Field(default=..., description="""The permanent identifier of the rule.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'Element']} })
+    id: str = Field(default=..., description="""The permanent identifier of the rule.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'ModelElement']} })
     statement: str = Field(default=..., description="""The rule, stated in one sentence of prose.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Constraint']} })
     enforced_by: Enforcer = Field(default=..., description="""The enforcer that holds the rule. Always present; an enforcer with no kind is the honest record of a rule nothing mechanically enforces.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Constraint']} })
     reason: Optional[str] = Field(default=None, description="""Why the rule is not mechanically enforced. Required when there is no enforcer.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Constraint']} })
@@ -196,36 +196,36 @@ class Enforcer(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.registry'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
-    kind: Optional[EnforcerKind] = Field(default=None, description="""What sort of enforcer this is.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element', 'Relation']} })
+    kind: Optional[EnforcerKind] = Field(default=None, description="""What sort of enforcer this is.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'ModelElement', 'ModelRelation']} })
     ref: Optional[str] = Field(default=None, description="""The identifier of the enforcer, resolved against the models.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer']} })
     fixture: Optional[str] = Field(default=None, description="""A case that must fail, naming this enforcer in the violation report.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer']} })
     fixture_class: Optional[str] = Field(default=None, description="""The schema class a YAML fixture instantiates.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer']} })
 
 
-class Element(ConfiguredBaseModel):
+class ModelElement(ConfiguredBaseModel):
     """
     An architectural element, as a vocabulary instance, and the classes it owns.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.models'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
-    id: str = Field(default=..., description="""The fully qualified element identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'Element']} })
-    title: str = Field(default=..., description="""The element's display title.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element', 'Relation']} })
-    kind: str = Field(default=..., description="""The element's kind, as its producer declares it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element', 'Relation']} })
-    owns: list[str] = Field(default=..., description="""The schema classes this element claims.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element']} })
+    id: str = Field(default=..., description="""The fully qualified element identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'ModelElement']} })
+    title: str = Field(default=..., description="""The element's display title.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement', 'ModelRelation']} })
+    kind: str = Field(default=..., description="""The element's kind, as its producer declares it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'ModelElement', 'ModelRelation']} })
+    owns: list[str] = Field(default=..., description="""The schema classes this element claims.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement']} })
 
 
-class Relation(ConfiguredBaseModel):
+class ModelRelation(ConfiguredBaseModel):
     """
     A relation between two architectural elements.
     """
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.models'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
-    source: str = Field(default=..., description="""The element the relation starts at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Relation']} })
-    target: str = Field(default=..., description="""The element the relation ends at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Relation']} })
-    title: str = Field(default=..., description="""What the relation is called.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Element', 'Relation']} })
-    kind: Optional[str] = Field(default=None, description="""The relation's kind, when its producer declares one.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'Element', 'Relation']} })
+    source: str = Field(default=..., description="""The element the relation starts at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation']} })
+    target: str = Field(default=..., description="""The element the relation ends at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation']} })
+    title: str = Field(default=..., description="""What the relation is called.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement', 'ModelRelation']} })
+    kind: Optional[str] = Field(default=None, description="""The relation's kind, when its producer declares one.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'ModelElement', 'ModelRelation']} })
 
 
 class Region(ConfiguredBaseModel):
@@ -279,8 +279,8 @@ Report.model_rebuild()
 Summary.model_rebuild()
 Constraint.model_rebuild()
 Enforcer.model_rebuild()
-Element.model_rebuild()
-Relation.model_rebuild()
+ModelElement.model_rebuild()
+ModelRelation.model_rebuild()
 Region.model_rebuild()
 Probe.model_rebuild()
 ProjectPaths.model_rebuild()

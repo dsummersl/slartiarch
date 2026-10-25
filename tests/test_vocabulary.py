@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +11,7 @@ from linkml.validator import validate
 from linkml_runtime import SchemaView
 from typer.testing import CliRunner
 
-from slarti import vocabulary
+from slarti import generate, vocabulary
 from slarti.cli import app
 from slarti.models import Models
 from tests.conftest import make_config
@@ -50,6 +51,15 @@ def test_models_resolve_the_vocabulary_import(tmp_path: Path) -> None:
     models = Models(config=config)
     assert models.schema is not None
     assert "Element" in models.schema.class_ancestors("Database")
+
+
+@pytest.mark.skipif(shutil.which("gen-erdiagram") is None, reason="LinkML is not installed")
+def test_the_er_diagram_shows_the_project_not_the_vocabulary(tmp_path: Path) -> None:
+    config = make_config(tmp_path)
+    (config.path("linkml") / "todo.yaml").write_text(PROJECT.read_text(), encoding="utf-8")
+    block = generate.linkml_erd_block(Models(config=config))
+    assert "Service {" in block and "Database {" in block
+    assert "Corpus {" not in block
 
 
 def test_the_structural_layer_stands_alone() -> None:

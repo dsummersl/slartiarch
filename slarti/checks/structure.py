@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
-from slarti.domain import Element, Relation
+from slarti.domain import ModelElement, ModelRelation
 from slarti.findings import Finding, Severity
 from slarti.instances import Corpus, Drawn
 from slarti.models import Models
@@ -168,7 +168,9 @@ def _endpoint_unattached(edge: Drawn, nodes: dict[str, Drawn]) -> Finding | None
     )
 
 
-def _depicts(relation: Relation, ends: tuple[str | None, str | None], kind: str | None) -> bool:
+def _depicts(
+    relation: ModelRelation, ends: tuple[str | None, str | None], kind: str | None
+) -> bool:
     return (relation.source, relation.target) == ends and kind in (relation.kind, relation.title)
 
 
@@ -234,7 +236,7 @@ def _shown(corpus: Corpus, names: Names) -> set[str | None]:
     return {names.element(n.attaches_to) for n in corpus.nodes if n.attached}
 
 
-def _undrawn_elements(models: Models, corpus: Corpus, names: Names) -> list[Element]:
+def _undrawn_elements(models: Models, corpus: Corpus, names: Names) -> list[ModelElement]:
     kinds = _drawn_kinds(models)
     candidates = [corpus.elements[i] for i in sorted(set(corpus.elements) - _shown(corpus, names))]
     return [e for e in candidates if e.kind in kinds]

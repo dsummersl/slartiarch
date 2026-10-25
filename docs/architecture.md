@@ -2,7 +2,7 @@
 
 This document is generated in part by `slarti` itself (I13). The prose is
 user-authored; every region between `slarti:begin` / `slarti:end` markers is
-generated from `model/` and must never be hand-edited.
+generated from `docs/slarti/` and must never be hand-edited.
 
 ## 1. Introduction and goals
 
@@ -10,17 +10,21 @@ Architecture documents drift, and the drift is invisible: a stale diagram looks
 exactly like a fresh one, and an unenforced rule in prose reads exactly like an
 enforced one.
 
-**LikeC4** validates structure and generates diagrams. **LinkML** validates
-entities and generates schemas and projections. Neither can see the other, and
-neither can see the prose document that claims what they enforce. `slarti` owns
-exactly those joins:
+**Diagrams** — Mermaid in the document, or a LikeC4 model — say which components
+exist and which talk to which. **LinkML** validates entities and generates schemas
+and projections. Neither can see the other, and neither can see the prose document
+that claims what they enforce. `slarti` owns exactly those joins:
 
-- LikeC4 ↔ LinkML — the ownership seam.
+- Architecture ↔ diagrams — every node and edge is attached or ignored (ADR-0004).
+- Architecture ↔ LinkML — the ownership seam.
 - Document ↔ rules — the constraint registry.
 - Document ↔ models — the drift gate.
 
-Everything else — parsing, validating, rendering, generating — is delegated to
-LikeC4, LinkML and pyshacl as subprocesses.
+The architecture is `slarti`'s own vocabulary: elements and relations, written as
+instances or produced by an adapter. Everything else — validating schemas and
+shapes, generating projections — is delegated to LinkML and pyshacl as
+subprocesses. The one thing `slarti` parses itself is the subset of Mermaid its
+adapter reads.
 
 ## 2. Definitions
 
@@ -35,7 +39,7 @@ the layer determines which enforcer kinds are legal for it:
 
 | Layer | Model | Answers | Decided by | Enforcer kinds |
 | --- | --- | --- | --- | --- |
-| 1 — structure | LikeC4 | Which components exist, and which may talk to which? | `likec4 validate` + the JSON export | `likec4_element`, `likec4_relation`, `likec4_absent_relation`, `ownership` |
+| 1 — structure | the vocabulary's elements and relations | Which components exist, and which may talk to which? | `slarti`'s diagram checks over the vocabulary instances | `likec4_element`, `likec4_relation`, `likec4_absent_relation`, `ownership` |
 | 2 — schema | LinkML | What entities exist, and what shape is a single instance? | `linkml lint` / `linkml validate` | `linkml_class`, `linkml_slot` |
 | 3 — instance | SHACL, run by pyshacl | Given real data, does this cross-field or cross-entity invariant hold? | `pyshacl` over a negative fixture | `shacl_shape` |
 | none | — | Anything the three layers cannot see (runtime behaviour, code paths) | a test, or a human | `external`, or `enforced_by: none` with a reason |
@@ -47,32 +51,33 @@ matches its parent's. Layer 3 can say that; it cannot say anything about a code 
 that never ran. A rule stated at the wrong layer is not enforced — it is only
 mentioned — which is why `enforced_by: none` with a reason is a first-class answer.
 
-### 2.2 LikeC4 — the structure layer
+### 2.2 The vocabulary — the structure layer
 
-LikeC4 owns *the boxes and arrows*: elements, containment, relationships, views.
+`slarti`'s own LinkML vocabulary owns *the boxes and arrows*: elements, relations,
+and the diagrams that depict them (ADR-0004).
 
-- **Responsibilities.** Parse `model/arch/*.c4`; reject unknown elements, dangling
-  relations and invalid views; generate diagrams (`likec4 codegen mermaid`); expose
-  the whole model as JSON (`likec4 export json`).
-- **Not responsible for.** Anything about an instance of data. LikeC4 has no notion
-  of a field, a type or a cardinality.
-- **Mermaid instead.** A project may draw its diagrams in Mermaid. The Mermaid
-  adapter parses sequence and entity-relationship diagrams in Python and emits the
-  same vocabulary instances, so the diagram checks hold for both; syntax outside
-  its subset is an `MMD-*` finding (`docs/mermaid.md`).
-- **How `slarti` uses it.** Only the LikeC4 adapter shells out to it (D5, D6). The
-  adapter translates the export into vocabulary instances: elements and relations,
-  and each view as a diagram whose nodes and edges carry a `SourceLocation` in the
-  `.c4` source. No check reads the export itself; the ownership seam, the diagram
-  checks and every layer-1 enforcer run on those instances. `likec4 codegen`
-  produces the diagrams that the document generator injects (D9).
+- **Responsibilities.** Say which elements exist and which relations hold between
+  them, and record every diagram's nodes and edges with the element or relation
+  each depicts, or why it depicts nothing. `slarti`'s diagram checks (`ATTACH-*`,
+  `IDENT-*`, `DANGLE-*`, `KIND-1`) run on these instances.
+- **Not responsible for.** Anything about an instance of data. The vocabulary has no
+  notion of a field, a type or a cardinality in the system it describes.
+- **How `slarti` uses it.** `slarti`'s own elements and relations are written by
+  hand in `docs/slarti/instances/`, with kinds from the C4 profile. The diagrams in
+  this document are Mermaid, read back by the Mermaid adapter: a C4 macro attaches
+  its node to the element its alias names, and a `Rel` label names the relation it
+  depicts. A diagram that drifts from the instances is a finding.
+- **LikeC4 instead.** A project may keep a LikeC4 model. The LikeC4 adapter, the
+  only component that shells out to it (D5, D6), translates `likec4 export json`
+  into the same instances, and `likec4 codegen mermaid` produces the diagrams the
+  document generator injects (D9). Node and LikeC4 are needed only then.
 
 ### 2.3 LinkML — the schema layer
 
 LinkML owns *the entities*: classes, slots, types, cardinality, and the generators
 that project them.
 
-- **Responsibilities.** Validate `model/schema/*.yaml`; resolve it as a `SchemaView`;
+- **Responsibilities.** Validate `docs/slarti/linkml/*.yaml`; resolve it as a `SchemaView`;
   generate SHACL (`gen-shacl`), ER diagrams, and implementation projections
   (`gen-pydantic`, `gen-typescript`, `gen-sqlddl`, `gen-json-schema`); convert YAML
   fixtures to RDF (`linkml-convert`).
@@ -86,134 +91,135 @@ that project them.
 pyshacl owns *the verdict on real data*: it runs a SHACL shapes graph against a data
 graph and reports conformance.
 
-- **Responsibilities.** Given the merged shapes (`model/shapes/*.ttl`, plus anything
+- **Responsibilities.** Given the merged shapes (`docs/slarti/shacl/*.ttl`, plus anything
   LinkML generated) and one fixture, decide conformance and name every violated
   shape.
 - **Not responsible for.** Deciding which fixtures exist or what they prove — that is
   the registry's job.
 - **How `slarti` uses it.** Every layer-3 rule declares one negative fixture in
-  `model/data/invalid/`. `slarti check` asserts the fixture *fails* and that the
+  `docs/slarti/data/invalid/`. `slarti check` asserts the fixture *fails* and that the
   violation report *names that rule's shape* (`REG-6`, `REG-7`). A shape that stops
   firing is a finding, not a silently passing build.
 
 ### 2.5 Enforcer
 
-The named thing that decides a rule: a shape IRI, a `Class.slot`, a LikeC4 relation,
-or an ownership pair. A constraint without a resolvable enforcer is a `REG-1`
+The named thing that decides a rule: a shape IRI, a `Class.slot`, a relation between
+two elements, or an ownership pair. A constraint without a resolvable enforcer is a `REG-1`
 finding.
 
 ### 2.6 Seam
 
-A join between two models that neither model can see: LikeC4 ↔ LinkML (ownership),
-document ↔ registry, document ↔ models. Seams are the only thing `slarti` itself
+A join between two models that neither model can see: architecture ↔ diagrams,
+architecture ↔ LinkML (ownership), document ↔ registry, document ↔ models. Seams are the only thing `slarti` itself
 enforces.
 
 ## 3. Constraints
 
 - Python 3.11+, distributed as a `uv`-installable CLI.
-- Exactly two backends: LikeC4 and LinkML. No abstraction layer over either.
-  ADR-0004 (proposed) replaces this with `slarti`'s own vocabulary, produced by
-  built-in LikeC4 and Mermaid adapters or by any other tool.
+- `slarti` checks instances of its own vocabulary (ADR-0004). The built-in LikeC4
+  and Mermaid adapters produce them, and so may any other tool. No plugin API.
 - No cache and no state file: everything is derived on each invocation.
-- No JVM, no Docker and no browser on the default path.
-- Supported ranges are enforced at runtime: LikeC4 `>=1.59,<2`, LinkML
-  `>=1.11,<2`, Node `>=20`, Python `>=3.11,<4`, and a pinned Mermaid `>=11,<13`. Outside the range `slarti`
+- No JVM, no Docker, no browser and no Node on the default path. Node is needed
+  only by a project that keeps a LikeC4 model.
+- Supported ranges are enforced at runtime: LinkML `>=1.11,<2`, Python
+  `>=3.11,<4`, a pinned Mermaid `>=11,<13`, and, only when the project keeps a
+  LikeC4 model, LikeC4 `>=1.59,<2` and Node `>=20`. Outside the range `slarti`
   refuses to run rather than producing possibly-wrong output.
 
 ## 4. Context
 
 The people who use `slarti`, the sources they edit, and the tools it delegates to.
-
-<!-- slarti:begin diagram:index -->
+This diagram is hand-written. The Mermaid adapter reads it back, so every box is
+attached to an element in `docs/slarti/instances/`. The arrows out of `slarti`
+summarise its containers' relations, so each is ignored with a reason.
 
 ```mermaid
----
-title: "slarti in context"
----
-graph TB
-  Architect@{ shape: rectangle, label: "Architect" }
-  Agent@{ shape: rectangle, label: "LLM agent" }
-  Slarti@{ shape: rectangle, label: "slarti" }
-  Likec4@{ shape: rectangle, label: "LikeC4" }
-  Linkml@{ shape: rectangle, label: "LinkML" }
-  Pyshacl@{ shape: rectangle, label: "pyshacl" }
-  Sources@{ shape: rectangle, label: "Model sources" }
-  Architect -. "`runs check`" .-> Slarti
-  Architect -. "`edits`" .-> Sources
-  Agent -. "`runs check --json and applies remedies`" .-> Slarti
-  Agent -. "`edits`" .-> Sources
-  Slarti -. "`[...]`" .-> Likec4
-  Slarti -. "`[...]`" .-> Linkml
-  Slarti -. "`validates one negative fixture per rule`" .-> Pyshacl
-  Slarti -. "`[...]`" .-> Sources
+C4Context
+  title slarti in context
+  %% slarti: ignore architect -> slarti derived from the architect's relation to the CLI, drawn in the containers view
+  %% slarti: ignore agent -> slarti derived from the agent's relation to the CLI, drawn in the containers view
+  %% slarti: ignore slarti -> likec4 derived from the containers' relations to LikeC4, drawn in the containers view
+  %% slarti: ignore slarti -> linkml derived from the containers' relations to LinkML, drawn in the containers view
+  %% slarti: ignore slarti -> pyshacl derived from the checks' relation to pyshacl, drawn in the containers view
+  %% slarti: ignore slarti -> sources derived from the containers' relations to the sources, drawn in the containers view
+  Person(architect, "Architect", "Owns the prose: goals, constraints, decisions.")
+  Person(agent, "LLM agent", "Edits model sources between sessions.")
+  System(slarti, "slarti", "Checks diagrams, schemas and shapes against each other.")
+  System_Ext(sources, "Model sources", "Instances, schemas, shapes, registry and document.")
+  System_Ext(linkml, "LinkML", "Validates the schema and generates projections.")
+  System_Ext(pyshacl, "pyshacl", "Validates negative fixtures against the shapes.")
+  System_Ext(likec4, "LikeC4", "Optional: a structure source for projects that keep one.")
+  Rel(architect, slarti, "runs check")
+  Rel(agent, slarti, "runs check --json and applies remedies")
+  Rel(architect, sources, "edits")
+  Rel(agent, sources, "edits")
+  Rel(slarti, sources, "reads, and writes generated regions only")
+  Rel(slarti, linkml, "SchemaView, gen-erdiagram")
+  Rel(slarti, pyshacl, "validates one negative fixture per rule")
+  Rel(slarti, likec4, "export json, codegen mermaid")
+  UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```
-
-<!-- slarti:end diagram:index -->
 
 ## 5. Building block view
 
 Inside `slarti`: the CLI gates on the environment, the runner orders the checks,
-the adapters are the only components that talk to LikeC4 and LinkML, and the
-document generator is the only component that writes.
-
-<!-- slarti:begin diagram:containers -->
+the adapters are the only components that read diagrams, and the document generator
+is the only component that writes. Every `Rel` is a relation the instances declare
+(`DANGLE-2`), so this diagram cannot drift from the model.
 
 ```mermaid
----
-title: "Inside slarti"
----
-graph TB
-  Architect@{ shape: rectangle, label: "Architect" }
-  Agent@{ shape: rectangle, label: "LLM agent" }
-  subgraph Slarti["`slarti`"]
-    Slarti.Cli@{ shape: rectangle, label: "CLI" }
-    Slarti.Runner@{ shape: rectangle, label: "Runner" }
-    Slarti.Docsgen@{ shape: rectangle, label: "Document generator" }
-    Slarti.Env@{ shape: rectangle, label: "Environment gate" }
-    Slarti.Settings@{ shape: rectangle, label: "Config" }
-    Slarti.Scaffold@{ shape: rectangle, label: "Scaffolder" }
-    Slarti.Checks@{ shape: rectangle, label: "Checks" }
-    Slarti.Registry@{ shape: rectangle, label: "Registry" }
-    Slarti.Findings@{ shape: rectangle, label: "Findings" }
-    Slarti.Models@{ shape: rectangle, label: "Models" }
-    Slarti.Adapters@{ shape: rectangle, label: "Adapters" }
-    Slarti.Vocabulary@{ shape: rectangle, label: "Vocabulary" }
-  end
-  Pyshacl@{ shape: rectangle, label: "pyshacl" }
-  Linkml@{ shape: rectangle, label: "LinkML" }
-  Likec4@{ shape: rectangle, label: "LikeC4" }
-  Sources@{ shape: rectangle, label: "Model sources" }
-  Architect -. "`runs check`" .-> Slarti.Cli
-  Agent -. "`runs check --json and applies remedies`" .-> Slarti.Cli
-  Slarti.Cli -. "`runs the checks`" .-> Slarti.Runner
-  Slarti.Cli -. "`regenerates the document`" .-> Slarti.Docsgen
-  Slarti.Cli -. "`gates on tool versions`" .-> Slarti.Env
-  Slarti.Cli -. "`resolves paths`" .-> Slarti.Settings
-  Slarti.Cli -. "`reports the version`" .-> Slarti.Vocabulary
-  Slarti.Cli -. "`scaffolds a new project`" .-> Slarti.Scaffold
-  Slarti.Runner -. "`collects findings`" .-> Slarti.Checks
-  Slarti.Runner -. "`loads the constraints`" .-> Slarti.Registry
-  Slarti.Checks -. "`emits findings`" .-> Slarti.Findings
-  Slarti.Checks -. "`reads both models`" .-> Slarti.Models
-  Slarti.Docsgen -. "`reads the rules`" .-> Slarti.Registry
-  Slarti.Models -. "`reads instances from`" .-> Slarti.Adapters
-  Slarti.Models -. "`resolves the vocabulary import`" .-> Slarti.Vocabulary
-  Slarti.Docsgen -. "`reads the model`" .-> Slarti.Models
-  Slarti.Docsgen -. "`resolves the vocabulary import`" .-> Slarti.Vocabulary
-  Slarti.Adapters -. "`emits instances of`" .-> Slarti.Vocabulary
-  Slarti.Checks -. "`validates one negative fixture per rule`" .-> Pyshacl
-  Slarti.Registry -. "`reads`" .-> Sources
-  Slarti.Models -. "`SchemaView`" .-> Linkml
-  Slarti.Models -. "`reads`" .-> Sources
-  Slarti.Docsgen -. "`delegates diagram generation`" .-> Likec4
-  Slarti.Docsgen -. "`writes generated regions only`" .-> Sources
-  Slarti.Env -. "`probes the version`" .-> Likec4
-  Slarti.Env -. "`probes the version`" .-> Linkml
-  Slarti.Adapters -. "`export json`" .-> Likec4
-  Slarti.Adapters -. "`parses Mermaid diagrams in`" .-> Sources
+C4Container
+  title Inside slarti
+  Person(architect, "Architect")
+  Person(agent, "LLM agent")
+  System_Boundary(slarti, "slarti") {
+    Container(cli, "CLI", "typer")
+    Container(env, "Environment gate")
+    Container(settings, "Config")
+    Container(scaffold, "Scaffolder")
+    Container(runner, "Runner")
+    Container(docsgen, "Document generator")
+    Container(checks, "Checks")
+    Container(registry, "Registry")
+    Container(findings, "Findings")
+    Container(models, "Models")
+    Container(adapters, "Adapters")
+    Container(vocabulary, "Vocabulary", "LinkML")
+  }
+  System_Ext(sources, "Model sources")
+  System_Ext(linkml, "LinkML")
+  System_Ext(pyshacl, "pyshacl")
+  System_Ext(likec4, "LikeC4", "optional")
+  Rel(architect, cli, "runs check")
+  Rel(agent, cli, "runs check --json and applies remedies")
+  Rel(cli, env, "gates on tool versions")
+  Rel(cli, runner, "runs the checks")
+  Rel(cli, scaffold, "scaffolds a new project")
+  Rel(cli, docsgen, "regenerates the document")
+  Rel(cli, settings, "resolves paths")
+  Rel(cli, vocabulary, "reports the version")
+  Rel(runner, checks, "collects findings")
+  Rel(runner, registry, "loads the constraints")
+  Rel(checks, models, "reads both models")
+  Rel(checks, findings, "emits findings")
+  Rel(checks, pyshacl, "validates one negative fixture per rule")
+  Rel(docsgen, models, "reads the model")
+  Rel(docsgen, registry, "reads the rules")
+  Rel(docsgen, vocabulary, "resolves the vocabulary import")
+  Rel(docsgen, likec4, "delegates diagram generation")
+  Rel(docsgen, sources, "writes generated regions only")
+  Rel(models, vocabulary, "resolves the vocabulary import")
+  Rel(models, adapters, "reads instances from")
+  Rel(models, linkml, "SchemaView")
+  Rel(models, sources, "reads")
+  Rel(adapters, likec4, "export json")
+  Rel(adapters, sources, "parses Mermaid diagrams in")
+  Rel(adapters, vocabulary, "emits instances of")
+  Rel(env, likec4, "probes the version")
+  Rel(env, linkml, "probes the version")
+  Rel(registry, sources, "reads")
+  UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```
-
-<!-- slarti:end diagram:containers -->
 
 ### 5.1 One `slartiarch check`
 
@@ -266,13 +272,13 @@ a dangling pointer and an unclaimed target are different failures.
 | Entity | Owner | Owner title |
 | --- | --- | --- |
 | Constraint | `slarti.registry` | Registry |
-| Element | `slarti.models` | Models |
 | Enforcer | `slarti.registry` | Registry |
 | Finding | `slarti.findings` | Findings |
+| ModelElement | `slarti.models` | Models |
+| ModelRelation | `slarti.models` | Models |
 | Probe | `slarti.env` | Environment gate |
 | ProjectPaths | `slarti.settings` | Config |
 | Region | `slarti.docsgen` | Document generator |
-| Relation | `slarti.models` | Models |
 | Report | `slarti.findings` | Findings |
 | Summary | `slarti.findings` | Findings |
 
@@ -294,12 +300,6 @@ Constraint {
     string reason  
     string statement  
 }
-Element {
-    string id  
-    string kind  
-    stringList owns  
-    string title  
-}
 Enforcer {
     string fixture  
     string fixture_class  
@@ -314,6 +314,18 @@ Finding {
     string remedy  
     Severity severity  
     string subject  
+}
+ModelElement {
+    string id  
+    string kind  
+    stringList owns  
+    string title  
+}
+ModelRelation {
+    string kind  
+    string source  
+    string target  
+    string title  
 }
 Probe {
     string detail  
@@ -337,12 +349,6 @@ Region {
     string name  
     string body  
     integer line  
-}
-Relation {
-    string kind  
-    string source  
-    string target  
-    string title  
 }
 Report {
     string seam_version  
@@ -376,7 +382,7 @@ than a sentence that quietly stops being true.
 | D4 | A finding names the file it is about. | linkml_slot `Finding.file` | - |
 | D5 | The checks never invoke LikeC4 or LinkML themselves; the adapters do. | likec4_absent_relation `slarti.checks -> likec4` | - |
 | D6 | The CLI never reads model sources directly; it goes through the adapters. | likec4_absent_relation `slarti.cli -> sources` | - |
-| D7 | The environment gate probes LikeC4 before any command that shells out. | likec4_relation `slarti.env -> likec4` | - |
+| D7 | The environment gate probes LikeC4 before any command that shells out to it. | likec4_relation `slarti.env -> likec4` | - |
 | D8 | Every domain entity is owned by exactly one container. | ownership `Finding` | ADR-0002 |
 | D9 | The document generator writes only generated regions of the sources. | likec4_relation `slarti.docsgen -> sources` | - |
 
@@ -410,10 +416,18 @@ case, not a failure: each entry must say why enforcement is not possible.
   are modelled entities with shapes over them.
 - **ADR-0003 — The Python interfaces are a LinkML projection.** See
   `docs/adr/0003-python-interfaces-are-a-linkml-projection.md`. The domain classes
-  the implementation uses are generated from `model/schema/slarti.yaml` by
+  the implementation uses are generated from `docs/slarti/linkml/slarti.yaml` by
   `gen-pydantic` into `slarti/domain.py` and committed; behaviour is hand-written
   around them. Two definitions of one entity is the drift `slarti` exists to catch,
   so the schema is the only one, and a stale projection fails the test suite.
+- **ADR-0004 — slarti owns its vocabulary; diagrams arrive through adapters.** See
+  `docs/adr/0004-slarti-owns-its-vocabulary.md`. Checks run on instances of
+  `slarti`'s own LinkML vocabulary, never on diagram syntax. LikeC4 and Mermaid are
+  built-in adapters, and any tool that writes the instances is an equally valid
+  producer. `slarti` itself keeps its elements and relations as instances and
+  draws them in Mermaid, so its default path needs no Node. That is also why the
+  domain classes are named `ModelElement` and `ModelRelation`: the schema imports
+  the vocabulary's own `Element` and `Relation`.
 - **ADR-0005 — One command checks the document.** See
   `docs/adr/0005-one-command-checks-the-document.md`. `slarti check` reports every
   finding, the document's included; `slarti check --fix` regenerates the generated
@@ -423,6 +437,12 @@ case, not a failure: each entry must say why enforcement is not possible.
 
 - Upstream churn in LikeC4's JSON export or LinkML's generators would produce
   wrong findings. Mitigated by a hard version ceiling and a loud refusal to run.
+- Mermaid's syntax moves, and `slarti` owns the parser that reads it. Mitigated by
+  a supported range and by rendering every fixture, and this document, with the
+  pinned mermaid-cli in CI.
+- The enforcer kinds `likec4_element`, `likec4_relation` and
+  `likec4_absent_relation` keep their names, although they resolve against the
+  vocabulary whatever produced it.
 - The registry becomes busywork if it ever stops generating these tables.
 - YAML fixtures require a declared `fixture_class` to be converted to RDF;
   Turtle fixtures need nothing. Both are accepted.

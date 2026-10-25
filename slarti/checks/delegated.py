@@ -41,11 +41,12 @@ def _lint(config: Config, schema: Path, staged: Path) -> Delegation:
 def linkml_lint(config: Config) -> list[Delegation]:
     """Lint each schema from a staged copy whose vocabulary imports resolve locally;
     ``linkml lint`` takes no importmap. Output names the real files."""
+    texts = {schema: schema.read_text(encoding="utf-8") for schema in config.schema_files()}
+    force = any(vocabulary.imports_vocabulary(text) for text in texts.values())
     with tempfile.TemporaryDirectory() as tmp:
         staged = Path(tmp)
-        for schema in config.schema_files():
-            text = schema.read_text(encoding="utf-8")
-            (staged / schema.name).write_text(vocabulary.localised(text), encoding="utf-8")
+        for schema, text in texts.items():
+            (staged / schema.name).write_text(vocabulary.localised(text, force), encoding="utf-8")
         return [_lint(config, schema, staged) for schema in config.schema_files()]
 
 

@@ -1,0 +1,158 @@
+# slarti's own architecture, as vocabulary instances. The kinds come from the C4
+# profile (slarti:c4), which docs/slarti/linkml/slarti.yaml imports. The diagrams
+# in docs/architecture.md attach to these elements by their aliases.
+elements:
+  - id: architect
+    kind: Person
+    name: Architect
+    description: Owns the prose; goals, constraints, decisions.
+  - id: agent
+    kind: Person
+    name: LLM agent
+    description: Edits model sources between sessions, with no memory of the repository.
+
+  - id: slarti
+    kind: SoftwareSystem
+    name: slarti
+    description: Checks architecture diagrams, LinkML schemas and SHACL shapes against each other.
+
+  - id: slarti.cli
+    kind: Container
+    system: slarti
+    name: CLI
+    aliases: [cli]
+    description: "typer commands: init, doctor, check, report."
+  - id: slarti.runner
+    kind: Container
+    system: slarti
+    name: Runner
+    aliases: [runner]
+    description: Orders delegated validations and slarti checks into one report.
+  - id: slarti.checks
+    kind: Container
+    system: slarti
+    name: Checks
+    aliases: [checks]
+    description: "The ownership, registry, diagram and document seams: OWN-*, REG-*, ATTACH-*, DOC-*."
+  - id: slarti.findings
+    kind: Container
+    system: slarti
+    name: Findings
+    aliases: [findings]
+    description: Stable rule IDs, remedies and the JSON report shape.
+    owns: [Finding, Report, Summary]
+  - id: slarti.registry
+    kind: Container
+    system: slarti
+    name: Registry
+    aliases: [registry]
+    description: "Reads the constraint registry: the join table between prose and enforcement."
+    owns: [Constraint, Enforcer]
+  - id: slarti.models
+    kind: Container
+    system: slarti
+    name: Models
+    aliases: [models]
+    description: Merges the vocabulary instances of every producer; LinkML via SchemaView, SHACL via rdflib.
+    owns: [ModelElement, ModelRelation]
+  - id: slarti.docsgen
+    kind: Container
+    system: slarti
+    name: Document generator
+    aliases: [docsgen]
+    description: Generates tables and diagram blocks, and injects them between markers.
+    owns: [Region]
+  - id: slarti.env
+    kind: Container
+    system: slarti
+    name: Environment gate
+    aliases: [env]
+    description: Probes every delegated tool the project uses and refuses to run outside the supported range.
+    owns: [Probe]
+  - id: slarti.settings
+    kind: Container
+    system: slarti
+    name: Config
+    aliases: [settings]
+    description: "Reads slarti.toml: paths only, no mirrored settings."
+    owns: [ProjectPaths]
+  - id: slarti.adapters
+    kind: Container
+    system: slarti
+    name: Adapters
+    aliases: [adapters]
+    description: >-
+      Built-in producers: LikeC4 via export json, and Mermaid sequence, ER and C4
+      diagrams parsed in Python, translated into vocabulary instances.
+  - id: slarti.vocabulary
+    kind: Container
+    system: slarti
+    name: Vocabulary
+    aliases: [vocabulary]
+    description: "The LinkML data contract adapters produce: diagrams, nodes, edges, elements, relations."
+  - id: slarti.scaffold
+    kind: Container
+    system: slarti
+    name: Scaffolder
+    aliases: [scaffold]
+    description: "slarti init: the conventional layout, written once, never overwritten."
+
+  - id: likec4
+    kind: SoftwareSystem
+    external: true
+    name: LikeC4
+    description: An optional structure source and diagram generator. Invoked via npx --no-install, only when a project keeps a LikeC4 model.
+  - id: linkml
+    kind: SoftwareSystem
+    external: true
+    name: LinkML
+    description: Validates the schema and generates projections. Invoked as a subprocess.
+  - id: pyshacl
+    kind: SoftwareSystem
+    external: true
+    name: pyshacl
+    description: Validates negative fixtures against the hand-written shapes.
+  - id: sources
+    kind: SoftwareSystem
+    external: true
+    name: Model sources
+    description: Vocabulary instances, LinkML schemas, SHACL shapes, the constraint registry and the architecture document.
+
+relations:
+  - {kind: Relationship, source: architect, target: slarti.cli, description: runs check}
+  - {kind: Relationship, source: agent, target: slarti.cli, description: runs check --json and applies remedies}
+  - {kind: Relationship, source: agent, target: sources, description: edits}
+  - {kind: Relationship, source: architect, target: sources, description: edits}
+
+  - {kind: Relationship, source: slarti.cli, target: slarti.env, description: gates on tool versions}
+  - {kind: Relationship, source: slarti.cli, target: slarti.runner, description: runs the checks}
+  - {kind: Relationship, source: slarti.cli, target: slarti.scaffold, description: scaffolds a new project}
+  - {kind: Relationship, source: slarti.cli, target: slarti.docsgen, description: regenerates the document}
+  - {kind: Relationship, source: slarti.cli, target: slarti.settings, description: resolves paths}
+  - {kind: Relationship, source: slarti.cli, target: slarti.vocabulary, description: reports the version}
+
+  - {kind: Relationship, source: slarti.runner, target: slarti.checks, description: collects findings}
+  - {kind: Relationship, source: slarti.runner, target: slarti.registry, description: loads the constraints}
+  - {kind: Relationship, source: slarti.checks, target: slarti.models, description: reads both models}
+  - {kind: Relationship, source: slarti.checks, target: slarti.findings, description: emits findings}
+  - {kind: Relationship, source: slarti.checks, target: pyshacl, description: validates one negative fixture per rule}
+
+  - {kind: Relationship, source: slarti.docsgen, target: slarti.models, description: reads the model}
+  - {kind: Relationship, source: slarti.docsgen, target: slarti.registry, description: reads the rules}
+  - {kind: Relationship, source: slarti.docsgen, target: slarti.vocabulary, description: resolves the vocabulary import}
+  - {kind: Relationship, source: slarti.docsgen, target: likec4, description: delegates diagram generation}
+  - {kind: Relationship, source: slarti.docsgen, target: sources, description: writes generated regions only}
+
+  - {kind: Relationship, source: slarti.models, target: slarti.vocabulary, description: resolves the vocabulary import}
+  - {kind: Relationship, source: slarti.models, target: slarti.adapters, description: reads instances from}
+  - {kind: Relationship, source: slarti.models, target: linkml, description: SchemaView}
+  - {kind: Relationship, source: slarti.models, target: sources, description: reads}
+
+  - {kind: Relationship, source: slarti.adapters, target: likec4, description: export json}
+  - {kind: Relationship, source: slarti.adapters, target: sources, description: parses Mermaid diagrams in}
+  - {kind: Relationship, source: slarti.adapters, target: slarti.vocabulary, description: emits instances of}
+
+  - {kind: Relationship, source: slarti.env, target: likec4, description: probes the version}
+  - {kind: Relationship, source: slarti.env, target: linkml, description: probes the version}
+
+  - {kind: Relationship, source: slarti.registry, target: sources, description: reads}
