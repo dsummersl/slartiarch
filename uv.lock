@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -2271,7 +2271,7 @@ wheels = [
 
 [[package]]
 name = "slartiarch"
-version = "0.10.0"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "lark" },
@@ -2319,7 +2319,7 @@ dev = [
     { name = "pytest-cov", specifier = ">=7.1" },
     { name = "radon", specifier = ">=6.0.1" },
     { name = "ruff", specifier = ">=0.16" },
-    { name = "treepeat", specifier = ">=0.8.0" },
+    { name = "treepeat", specifier = ">=0.9.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12" },
     { name = "vulture", specifier = ">=2.16" },
 ]
@@ -2723,7 +2723,7 @@ wheels = [
 
 [[package]]
 name = "treepeat"
-version = "0.8.0"
+version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -2738,9 +2738,9 @@ dependencies = [
     { name = "tree-sitter" },
     { name = "tree-sitter-language-pack" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a7/dd/e9c75c5787278376f143d55aaa652978f28df7dfd68a7113a9386e2f2091/treepeat-0.8.0.tar.gz", hash = "sha256:05da1301146740070dbbff42526742b41ecaf1290973b9282310a8859123f505", size = 60940, upload-time = "2026-07-22T16:40:30.297Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/2b/4c8c7470c0747a19ac104498fb503a9e81b1866857821cc4c0751a4ff17c/treepeat-0.10.0.tar.gz", hash = "sha256:336dbbb2958d12a7af8e9f3dd2cb0547d6368d0426277a8aeab82b31852e7dd4", size = 62625, upload-time = "2026-10-23T16:12:31.165Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/23/df6083ee61ab2d08b34d503036c444a0a352efad2192558767dc26babf26/treepeat-0.8.0-py3-none-any.whl", hash = "sha256:5e474061f8bfe20bbcb7c02990fea8d34ba9eb537494864553319bc63f823a82", size = 76885, upload-time = "2026-07-22T16:40:29.266Z" },
+    { url = "https://files.pythonhosted.org/packages/99/a9/fb846afed7da04e73877629383800d0405a345c94e65b88074b3851fca7e/treepeat-0.10.0-py3-none-any.whl", hash = "sha256:6740d977a1bb5bb632d8aeef56fc8f0f0e96d658d6be981f364e1077a6f1adf8", size = 79530, upload-time = "2026-10-23T16:12:30.208Z" },
 ]
 
 [[package]]
