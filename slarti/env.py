@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -77,7 +76,7 @@ def _locate(req: Requirement) -> str | None:
     binary = req.argv[0]
     if binary == "npx":
         return f"npx --no-install {req.argv[2]}"
-    return shutil.which(binary)
+    return proc.resolve(binary)
 
 
 def probe(req: Requirement, cwd: Path | None = None) -> Probe:

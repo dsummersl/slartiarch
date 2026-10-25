@@ -56,3 +56,36 @@ def test_a_yaml_fixture_without_a_class_is_an_error(config) -> None:
     outcome = fixtures.validate(config, path)
     assert outcome.error is not None
     assert "fixture_class" in outcome.error
+
+
+VOCABULARY_SCHEMA = """id: https://example.org/example
+name: example
+prefixes:
+  example: https://example.org/example/
+  linkml: https://w3id.org/linkml/
+  slarti: https://dsummersl.github.io/slarti/
+default_prefix: example
+default_range: string
+imports:
+  - linkml:types
+  - slarti:c4
+classes:
+  Task:
+    attributes:
+      id:
+        identifier: true
+      list:
+"""
+
+needs_convert = pytest.mark.skipif(
+    shutil.which("linkml-convert") is None, reason="linkml-convert not installed"
+)
+
+
+@needs_pyshacl
+@needs_convert
+def test_a_yaml_fixture_converts_under_a_schema_importing_slarti(config) -> None:
+    (config.path("linkml") / "example.yaml").write_text(VOCABULARY_SCHEMA, encoding="utf-8")
+    outcome = fixtures.validate(config, write(config, "D4.yaml", "id: example:t1\n"), "Task")
+    assert outcome.error is None
+    assert "example:TaskHasList" in outcome.shapes

@@ -100,6 +100,22 @@ def test_delegated_failures_fail_the_run(tmp_path: Path, monkeypatch) -> None:
     assert RUNNER.invoke(app, ["check"]).exit_code == 1
 
 
+def test_check_json_keeps_delegated_output_off_stdout(tmp_path: Path, monkeypatch) -> None:
+    ctx = stub_context(tmp_path)
+    monkeypatch.setattr("slarti.cli._context", lambda: ctx)
+    failure = delegated.Delegation("linkml", ["linkml"], Result(1, "lint says no\n", ""))
+
+    def check(ctx, include_docs=True):  # noqa: ANN001, ANN202 - test double
+        return Report(), delegated.report([failure])
+
+    monkeypatch.setattr(runner, "check", check)
+    result = RUNNER.invoke(app, ["check", "--json"])
+    assert result.exit_code == 1
+    assert json.loads(result.stdout)["findings"] == []
+    assert "lint says no" in result.stderr
+    assert "delegated validation failed" in result.stderr
+
+
 def test_delegated_diagnostics_pass_through(capsys) -> None:
     failure = delegated.Delegation("likec4", ["likec4"], Result(1, "out\n", "err\n"))
     assert not delegated.report([failure])

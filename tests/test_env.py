@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
 
 from slarti import env, proc
@@ -51,3 +54,11 @@ def test_parse_version_ignores_prefixes() -> None:
     assert env.parse_version("v22.3.1\n") == (22, 3, 1)
     assert env.parse_version("linkml, version 1.11") == (1, 11, 0)
     assert env.parse_version("no version here") is None
+
+
+def test_a_tool_beside_the_interpreter_resolves_off_path(monkeypatch, tmp_path: Path) -> None:
+    (tmp_path / "linkml").write_text("", encoding="utf-8")
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
+    monkeypatch.setenv("PATH", "")
+    assert proc.resolve("linkml") == str(tmp_path / "linkml")
+    assert proc.resolve("pyshacl") is None

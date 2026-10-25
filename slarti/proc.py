@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -19,11 +20,24 @@ class Result:
     stderr: str
 
 
+def resolve(binary: str) -> str | None:
+    """A tool on PATH, else the one installed beside slarti's own interpreter.
+
+    ``uv tool install slartiarch`` exposes only ``slartiarch``; the LinkML and pyshacl
+    commands it depends on stay in the tool's environment."""
+    found = shutil.which(binary)
+    if found is not None:
+        return found
+    sibling = Path(sys.executable).parent / binary
+    return str(sibling) if sibling.is_file() else None
+
+
 def run(argv: list[str], cwd: Path | None = None) -> Result:
     """Run a delegated tool and capture its output verbatim."""
+    binary = resolve(argv[0]) or argv[0]
     try:
         proc = subprocess.run(
-            argv,
+            [binary, *argv[1:]],
             cwd=str(cwd) if cwd else None,
             capture_output=True,
             text=True,

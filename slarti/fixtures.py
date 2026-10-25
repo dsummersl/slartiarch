@@ -8,7 +8,7 @@ from rdflib import Graph
 from rdflib.namespace import RDF, SH
 from rdflib.term import Literal, Node, URIRef
 
-from slarti import proc
+from slarti import proc, vocabulary
 from slarti.config import Config
 
 
@@ -44,11 +44,13 @@ def _to_turtle(config: Config, fixture: Path, fixture_class: str | None, tmp: Pa
         raise ValueError(
             f"YAML fixture {config.rel(fixture)} needs 'fixture_class' and a LinkML schema."
         )
+    # linkml-convert takes no importmap, so it reads a copy whose slarti imports resolve here.
+    staged = vocabulary.staged(schemas, tmp)
     out = tmp / f"{fixture.stem}.ttl"
     argv = [
         "linkml-convert",
         "-s",
-        str(schemas[0]),
+        str(staged / schemas[0].name),
         "-C",
         fixture_class,
         "-t",

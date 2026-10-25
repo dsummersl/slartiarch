@@ -69,6 +69,7 @@ def test_scaffolded_config_loads(tmp_path: Path) -> None:
     cfg = config_module.load(tmp_path)
     assert cfg.root == tmp_path
     assert cfg.documents == ["docs/architecture.md"]
+    assert cfg.mermaid == ["docs/architecture.md"]
 
 
 def _without_node() -> str:
