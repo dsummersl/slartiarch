@@ -1,12 +1,11 @@
 {
   "name": "slarti-workspace",
   "private": true,
-  "description": "The user's pinned LikeC4, which slarti invokes via npx --no-install and never installs; and mermaid-cli, which only slarti's own CI uses to render its Mermaid fixtures.",
+  "description": "mermaid-cli, which only slarti's own CI uses to render its Mermaid fixtures. slarti itself needs no Node.",
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "~12.0.0",
     "@tanstack/ai": "0.14.0",
-    "@tanstack/ai-openai": "^0.8.2",
-    "likec4": "~1.59.2"
+    "@tanstack/ai-openai": "^0.8.2"
   },
   "dependencies": {
     "@tanstack/ai": "^0.14.0"

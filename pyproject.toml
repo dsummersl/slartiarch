@@ -85,8 +85,9 @@ ignore_names = ["doctor", "report_command", "_version_callback"]
 exclude = ["slarti/domain.py"]
 
 [tool.slartiarch.paths]
-likec4 = "docs/slarti/likec4"
+instances = ["docs/slarti/instances"]
 linkml = "docs/slarti/linkml"
+linkml_index = "architecture.yaml"
 shacl = "docs/slarti/shacl"
 constraints = "docs/slarti/constraints.yaml"
 shacl_valid = "docs/slarti/data/valid"

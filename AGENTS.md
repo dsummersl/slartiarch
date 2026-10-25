@@ -46,7 +46,7 @@ Writing guidance:
 ```
 slarti/         # Main package source code
 tests/          # Test files (mirror slarti/ structure)
-model/          # The architecture model slarti checks itself against
+docs/slarti/    # The architecture model slarti checks itself against
 docs/adr/       # Architecture Decision Records
 docs/architecture.md  # Generated in part by slarti itself
 ```
@@ -63,12 +63,14 @@ slartiarch check --fix  # regenerate the diagrams and tables, then check
 
 ### Files you may edit
 
-- `model/arch/*.c4` — the LikeC4 model of slarti's own containers
-- `model/schema/slarti.yaml` — the LinkML schema of slarti's domain entities
-- `model/shapes/*.ttl` — hand-written SHACL
-- `model/constraints.yaml` — the rule registry
-- `model/data/valid/*`, `model/data/invalid/*` — fixtures, one per rule
-- prose **outside** generated regions in `docs/architecture.md`
+- `docs/slarti/instances/*.yaml` — slarti's own elements and relations, as
+  vocabulary instances typed with the C4 profile
+- `docs/slarti/linkml/slarti.yaml` — the LinkML schema of slarti's domain entities
+- `docs/slarti/shacl/*.ttl` — hand-written SHACL
+- `docs/slarti/constraints.yaml` — the rule registry
+- `docs/slarti/data/valid/*`, `docs/slarti/data/invalid/*` — fixtures, one per rule
+- prose and the hand-written Mermaid diagrams **outside** generated regions in
+  `docs/architecture.md`
 
 ### Files you must never edit
 
@@ -79,10 +81,14 @@ as `DOC-1` and block the merge.
 
 ### Rules
 
-- A new domain class needs an `owner` annotation naming a LikeC4 element, and
-  that element must list the class in its `owns` metadata (`OWN-1`..`OWN-5`).
-- A new SHACL shape needs a constraint in `model/constraints.yaml` referencing
-  it, and a fixture under `model/data/invalid/` that makes it fire
+- A new domain class needs an `owner` annotation naming an element in
+  `docs/slarti/instances/`, and that element must list the class in its `owns`
+  (`OWN-1`..`OWN-5`).
+- A new element or relation should be drawn in the context or containers diagram
+  in `docs/architecture.md`; every `Rel` there must be a declared relation
+  (`DANGLE-2`).
+- A new SHACL shape needs a constraint in `docs/slarti/constraints.yaml` referencing
+  it, and a fixture under `docs/slarti/data/invalid/` that makes it fire
   (`REG-2`, `REG-6`, `REG-7`).
 - Every diagram node and edge in vocabulary instances is attached (`element` /
   `relation`) or `ignored` with a reason (`ATTACH-*`, `IDENT-*`, `DANGLE-*`,

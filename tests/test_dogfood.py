@@ -8,15 +8,14 @@ from pathlib import Path
 
 import pytest
 
+from slarti import config
+from slarti.models import Models
+
 ROOT = Path(__file__).resolve().parents[1]
-USER_AUTHORED = ("model", "docs/architecture.md", "slarti.toml", "AGENTS.md")
+USER_AUTHORED = ("docs/slarti", "docs/architecture.md", "pyproject.toml", "AGENTS.md")
 
 
-def has_tools() -> bool:
-    return shutil.which("linkml") is not None and (ROOT / "node_modules/.bin/likec4").exists()
-
-
-needs_tools = pytest.mark.skipif(not has_tools(), reason="LikeC4 or LinkML is not installed")
+needs_tools = pytest.mark.skipif(shutil.which("linkml") is None, reason="LinkML is not installed")
 
 
 def slarti(*args: str) -> subprocess.CompletedProcess[str]:
@@ -71,3 +70,18 @@ def test_json_findings_are_machine_readable() -> None:
     payload = json.loads(result.stdout)
     assert payload["findings"] == []
     assert payload["summary"]["checked"] > 0
+
+
+def test_slarti_needs_no_likec4_to_check_itself() -> None:
+    assert not config.load(ROOT).likec4_enabled()
+
+
+@needs_tools
+def test_the_architecture_is_drawn_in_mermaid() -> None:
+    corpus = Models(config=config.load(ROOT)).vocabulary
+    drawn = {node.attaches_to for node in corpus.nodes if node.attached}
+    assert set(corpus.elements) <= {
+        element
+        for element, aliases in corpus.aliases.items()
+        if element in drawn or drawn & set(aliases)
+    }

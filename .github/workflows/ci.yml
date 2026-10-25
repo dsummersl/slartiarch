@@ -22,14 +22,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Set up node
-        uses: actions/setup-node@v6
-        with:
-          node-version: "20"
-
-      - name: Install the pinned LikeC4 and mermaid-cli
-        run: npm ci
-
       - name: Install uv
         run: pip install uv
 
@@ -39,11 +31,10 @@ jobs:
       - name: CI
         run: make ci
 
+      # I10: slarti's own architecture is vocabulary instances and Mermaid, so this
+      # job installs no Node packages and LikeC4 is reported as not required.
       - name: Architecture (slarti dogfoods itself)
         run: make arch
-
-      - name: Render the Mermaid fixtures with mermaid-cli
-        run: make mermaid
 
       - name: Upload code coverage
         if: always()
@@ -52,3 +43,22 @@ jobs:
           name: coverage-html
           path: htmlcov/
           if-no-files-found: ignore
+
+  # ADR-0004: what the Mermaid adapter accepts must render. Node is needed here only.
+  mermaid:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Install the pinned mermaid-cli
+        run: npm ci
+
+      - name: Render the Mermaid fixtures with mermaid-cli
+        run: make mermaid

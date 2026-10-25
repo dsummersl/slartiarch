@@ -43,7 +43,7 @@ constraints:
       ref: "slarti.cli -> sources"
 
   - id: D7
-    statement: The environment gate probes LikeC4 before any command that shells out.
+    statement: The environment gate probes LikeC4 before any command that shells out to it.
     enforced_by:
       kind: likec4_relation
       ref: "slarti.env -> likec4"

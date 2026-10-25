@@ -1,0 +1,17 @@
+id: https://dsummersl.github.io/slarti/architecture
+name: slarti_architecture
+title: slarti's architecture
+description: >-
+  The root schema slarti checks itself against. It joins the domain schema to the
+  C4 profile, whose kinds type the elements in docs/slarti/instances/. The domain
+  schema imports nothing of slarti's, so its gen-pydantic projection stays the
+  domain alone (ADR-0003).
+prefixes:
+  slarti: https://dsummersl.github.io/slarti/
+  linkml: https://w3id.org/linkml/
+default_prefix: slarti
+default_range: string
+imports:
+  - linkml:types
+  - slarti:c4
+  - ./slarti

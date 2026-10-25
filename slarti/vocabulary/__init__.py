@@ -23,11 +23,18 @@ def importmap() -> dict[str, str]:
 _PREFIX_LINE = re.compile(r"^(\s+slarti:\s*).*$", re.MULTILINE)
 
 
-def localised(text: str) -> str:
+def imports_vocabulary(text: str) -> bool:
+    """Whether a schema's text imports the vocabulary or one of its profiles."""
+    return any(name in text for name in importmap())
+
+
+def localised(text: str, force: bool = False) -> str:
     """A schema's text with the ``slarti`` prefix pointing at this package.
 
-    For tools that resolve imports but take no importmap, such as ``linkml lint``."""
-    if not any(name in text for name in importmap()):
+    For tools that resolve imports but take no importmap, such as ``linkml lint``.
+    ``force`` localises a schema that imports nothing of slarti's but is imported
+    alongside one that does, so its own ``slarti`` prefix cannot undo the mapping."""
+    if not force and not imports_vocabulary(text):
         return text
     return _PREFIX_LINE.sub(lambda m: m.group(1) + SCHEMA.parent.as_uri() + "/", text)
 
@@ -58,6 +65,7 @@ __all__ = [
     "PROFILES",
     "SCHEMA",
     "importmap",
+    "imports_vocabulary",
     "localised",
     "profile_versions",
     "version",

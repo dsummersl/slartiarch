@@ -11,7 +11,7 @@ from linkml_runtime import SchemaView
 
 from slarti import vocabulary
 from slarti.config import Config
-from slarti.domain import Element, Finding, Relation, Severity
+from slarti.domain import Finding, ModelElement, ModelRelation, Severity
 
 SUFFIXES = (".yaml", ".yml", ".json")
 TARGET_CLASS = "Corpus"
@@ -44,8 +44,8 @@ class Drawn:
 class Corpus:
     """The diagrams, architectural elements and relations read from every instance file."""
 
-    elements: dict[str, Element] = field(default_factory=dict)
-    relations: list[Relation] = field(default_factory=list)
+    elements: dict[str, ModelElement] = field(default_factory=dict)
+    relations: list[ModelRelation] = field(default_factory=list)
     element_files: dict[str, str] = field(default_factory=dict)
     aliases: dict[str, list[str]] = field(default_factory=dict)
     nodes: list[Drawn] = field(default_factory=list)
@@ -140,8 +140,8 @@ def validation_schema(index: Path | None) -> SchemaView:
     return view
 
 
-def _element(raw: dict[str, Any]) -> Element:
-    return Element(
+def _element(raw: dict[str, Any]) -> ModelElement:
+    return ModelElement(
         id=str(raw["id"]),
         title=str(raw.get("name", "")),
         kind=str(raw.get("kind", "")),
@@ -149,9 +149,9 @@ def _element(raw: dict[str, Any]) -> Element:
     )
 
 
-def _relation(raw: dict[str, Any]) -> Relation:
+def _relation(raw: dict[str, Any]) -> ModelRelation:
     title = raw.get("description") or raw.get("kind") or ""
-    return Relation(
+    return ModelRelation(
         source=str(raw["source"]),
         target=str(raw["target"]),
         title=str(title),

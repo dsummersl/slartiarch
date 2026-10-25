@@ -148,7 +148,7 @@ classes:
       fixture_class:
         description: The schema class a YAML fixture instantiates.
 
-  Element:
+  ModelElement:
     description: An architectural element, as a vocabulary instance, and the classes it owns.
     annotations:
       owner: slarti.models
@@ -167,7 +167,7 @@ classes:
         multivalued: true
         required: true
 
-  Relation:
+  ModelRelation:
     description: A relation between two architectural elements.
     annotations:
       owner: slarti.models
