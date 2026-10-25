@@ -6,9 +6,22 @@ elements:
   - {id: todo.db, kind: Database, name: DB, aliases: [db]}
   - {id: todo.lists, kind: Table, name: Lists, aliases: [TODO-LIST]}
   - {id: todo.tasks, kind: Table, name: Tasks}
+  - {id: todo, kind: SoftwareSystem, name: Todo}
+  - {id: mail, kind: SoftwareSystem, name: Mail service}
+  - {id: todo.web, kind: Container, name: Web app, aliases: [web]}
+  - {id: todo.store, kind: Container, name: Task store, aliases: [taskstore]}
+  - {id: todo.web.router, kind: Component, name: Router, aliases: [router]}
+  - {id: todo.web.views, kind: Component, name: Views, aliases: [views]}
 relations:
   - {source: user, target: todo.api, description: uses}
   - {source: todo.api, target: todo.db, description: reads tasks}
   - {source: todo.api, target: todo.worker, description: enqueues}
   - {source: todo.worker, target: todo.db, description: writes tasks}
   - {source: todo.lists, target: todo.tasks, description: contains}
+  - {source: user, target: todo, description: uses}
+  - {source: todo, target: mail, description: sends reminders}
+  - {source: user, target: todo.web, description: uses}
+  - {source: todo.web, target: todo.store, description: reads and writes}
+  - {source: todo.web, target: mail, description: sends reminders}
+  - {source: todo.web.router, target: todo.web.views, description: renders}
+  - {source: todo.web.views, target: todo.store, description: reads tasks}

@@ -1,0 +1,16 @@
+C4Component
+  title Components of the web app
+  %% slarti: attach page views
+  %% slarti: ignore page -> taskstore drawn for the reader, the view reads through the router
+  Container_Boundary(web, "Web app") {
+    Component(router, "Router", "Flask", "Routes requests")
+    Component(page, "Views", "Jinja")
+  }
+  ContainerDb_Ext(taskstore, "Task store")
+  %% slarti: ignore legend drawn for the reader
+  %% slarti: ignore reader drawn for the reader
+  Boundary(legend, "Legend", "note") {
+    Person_Ext(reader, "Whoever reads this")
+  }
+  Rel(router, page, "renders")
+  Rel(page, taskstore, "reads")

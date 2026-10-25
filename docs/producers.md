@@ -70,9 +70,13 @@ relations:
 A node or edge may also name its structural class in `kind`, with the slots that
 class adds: `Participant` (`actor`) and `Message` (`order`, `arrow`) for sequence
 diagrams, `Entity` (`attributes`) and `EntityRelationship` (`source_cardinality`,
-`target_cardinality`, `identifying`) for entity-relationship diagrams. A node may
-also say which element kinds the element it depicts must be, in `element_kinds`
-(`KIND-1`). Both are optional; a plain node or edge needs neither.
+`target_cardinality`, `identifying`) for entity-relationship diagrams, and
+`C4Shape` (`macro`, `external`, `technology`, `description`), `C4Boundary`
+(`macro`, `boundary_type`) and `C4Relationship` (`macro`, `technology`,
+`description`) for C4 diagrams. A node drawn inside another, such as a shape in a
+boundary, names it in `within`. A node may also say which element kinds the
+element it depicts must be, in `element_kinds` (`KIND-1`). All are optional; a
+plain node or edge needs none of them.
 
 Elements and relations may be split across files; `slarti` reads them as one
 architecture. `owns` is the element's half of the ownership seam: a class whose

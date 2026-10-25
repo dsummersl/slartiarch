@@ -1,0 +1,30 @@
+// The supported subset of Mermaid C4 diagrams. Anything else is a finding.
+
+start: _NL? HEADER _NL _statement*
+
+_statement: element _NL
+          | boundary
+          | rel _NL
+          | title _NL
+          | style _NL
+
+element: ELEMENT "(" ID ("," arg)* ")"
+boundary: BOUNDARY "(" ID ("," arg)* ")" "{" _NL _statement+ "}" _NL
+rel: REL "(" ID "," ID ("," arg)* ")"
+arg: (NAMED "=")? STRING
+title: "title" REST?
+style: STYLE ARGS
+
+HEADER: /C4(Context|Container|Component)\b/
+ELEMENT: /(Person|System(Db|Queue)?|Container(Db|Queue)?|Component(Db|Queue)?)(_Ext)?\b/
+BOUNDARY: /(Enterprise_|System_|Container_)?Boundary\b/
+REL: /Rel(_(Up|U|Down|D|Left|L|Right|R))?\b/
+STYLE: /Update(ElementStyle|RelStyle|BoundaryStyle|LayoutConfig)\b/
+ID: /[A-Za-z_][A-Za-z0-9_]*/
+NAMED: /\$[A-Za-z]+/
+STRING: /"[^"\n]*"/
+ARGS: /\([^\n]*\)/
+REST: /[^\n]+/
+_NL: /(\r?\n[\t ]*)+/
+
+%ignore /[\t ]+/

@@ -1,0 +1,5 @@
+C4Context
+  %% Mail never calls Todo back in the architecture.
+  System(todo, "Todo")
+  System_Ext(mail, "Mail service")
+  Rel(mail, todo, "reports bounces")

@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from slarti.adapters.mermaid import directives, er, sequence
+from slarti.adapters.mermaid import c4, directives, er, sequence
 from slarti.adapters.mermaid.blocks import Block, files_for, read
-from slarti.adapters.mermaid.diagram import Instance, Parsed, Unsupported
+from slarti.adapters.mermaid.diagram import Instance, Parsed, Shape, Unsupported
 from slarti.config import Config
 from slarti.domain import Finding, Severity
 
@@ -14,6 +14,7 @@ Documents = dict[str, Instance]
 READERS: dict[str, Callable[[str], Parsed]] = {
     sequence.HEADER: sequence.read,
     er.HEADER: er.read,
+    **dict.fromkeys(c4.HEADERS, c4.read),
 }
 
 SUBSET_DOC = "docs/mermaid.md"
@@ -91,11 +92,14 @@ def _instances(block: Block, parsed: Parsed, found: directives.Dispositions) -> 
     def node_id(name: str) -> str:
         return f"{block.id}/{name}"
 
+    def within(shape: Shape) -> Instance:
+        return {} if shape.within is None else {"within": node_id(shape.within)}
+
     shown = {name: directives.node(found, shape) for name, shape in parsed.nodes.items()}
     nodes = [
         {"id": node_id(name), "kind": shape.kind,
          "location": _location(block, shape.line, name, shape.label)}
-        | shape.extra | shown[name]
+        | within(shape) | shape.extra | shown[name]
         for name, shape in parsed.nodes.items()
     ]
     edges = [
