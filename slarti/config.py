@@ -23,6 +23,9 @@ DOCUMENTS_DEFAULT: list[str] = ["docs/architecture.md"]
 # Path keys whose value is a list of paths rather than a single path.
 LIST_KEYS = ("documents", "instances", "mermaid")
 
+# Keys of the ``[checks]`` table, each a list of names.
+CHECK_KEYS = ("drawn",)
+
 
 class ConfigError(Exception):
     """Raised when slarti.toml is missing or malformed."""
@@ -30,13 +33,16 @@ class ConfigError(Exception):
 
 @dataclass(frozen=True)
 class Config:
-    """Resolved project paths. Paths only — no settings are mirrored (I6)."""
+    """Resolved project paths, and the kinds slarti's own checks opt in.
+
+    No delegated tool's settings are mirrored here (I6)."""
 
     root: Path
     paths: dict[str, str] = field(default_factory=lambda: dict(DEFAULTS))
     documents: list[str] = field(default_factory=lambda: list(DOCUMENTS_DEFAULT))
     instances: list[str] = field(default_factory=list)
     mermaid: list[str] = field(default_factory=list)
+    drawn: list[str] = field(default_factory=list)
 
     def path(self, key: str) -> Path:
         return self.root / self.paths[key]
@@ -90,17 +96,24 @@ def find_root(start: Path) -> Path | None:
     return None
 
 
+def _unknown(configured: dict[str, Any], known: set[str], what: str, source_label: str) -> None:
+    unknown = sorted(set(configured) - known)
+    if unknown:
+        raise ConfigError(f"Unknown {what} keys in {source_label}: {', '.join(unknown)}")
+
+
 def _from_raw(root: Path, raw: dict[str, Any], source_label: str) -> Config:
     configured = raw.get("paths", {})
-    unknown = sorted(set(configured) - set(DEFAULTS) - set(LIST_KEYS))
-    if unknown:
-        raise ConfigError(f"Unknown path keys in {source_label}: {', '.join(unknown)}")
+    checks = raw.get("checks", {})
+    _unknown(configured, {*DEFAULTS, *LIST_KEYS}, "path", source_label)
+    _unknown(checks, set(CHECK_KEYS), "checks", source_label)
     docs = _merge_list(configured.get("documents"), DOCUMENTS_DEFAULT)
     instances = _merge_list(configured.get("instances"), [])
     mermaid = _merge_list(configured.get("mermaid"), [])
     path_keys = {k: str(v) for k, v in configured.items() if k not in LIST_KEYS}
     paths = dict(DEFAULTS) | path_keys
-    return Config(root=root, paths=paths, documents=docs, instances=instances, mermaid=mermaid)
+    return Config(root=root, paths=paths, documents=docs, instances=instances, mermaid=mermaid,
+                  drawn=_merge_list(checks.get("drawn"), []))
 
 
 def _merge_list(raw: Any, default: list[str]) -> list[str]:

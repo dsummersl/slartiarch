@@ -86,7 +86,7 @@ def test_check_fix_regenerates_stale_regions(tmp_path: Path, monkeypatch) -> Non
     monkeypatch.setattr(runner, "check", lambda ctx, include_docs=True: (Report(), True))
     result = RUNNER.invoke(app, ["check", "--fix"])
     assert result.exit_code == 0
-    assert "Every rule is enforced." in document.read_text(encoding="utf-8")
+    assert "No rules are declared." in document.read_text(encoding="utf-8")
 
 
 def _report(finding: Finding) -> Report:
@@ -106,7 +106,7 @@ def test_check_json_keeps_delegated_output_off_stdout(tmp_path: Path, monkeypatc
     failure = delegated.Delegation("linkml", ["linkml"], Result(1, "lint says no\n", ""))
 
     def check(ctx, include_docs=True):  # noqa: ANN001, ANN202 - test double
-        return Report(), delegated.report([failure])
+        return Report(), delegated.report([failure]) == 0
 
     monkeypatch.setattr(runner, "check", check)
     result = RUNNER.invoke(app, ["check", "--json"])
@@ -118,7 +118,7 @@ def test_check_json_keeps_delegated_output_off_stdout(tmp_path: Path, monkeypatc
 
 def test_delegated_diagnostics_pass_through(capsys) -> None:
     failure = delegated.Delegation("likec4", ["likec4"], Result(1, "out\n", "err\n"))
-    assert not delegated.report([failure])
+    assert delegated.report([failure]) == 1
     captured = capsys.readouterr()
     assert captured.out == "out\n"
     assert captured.err == "err\n"
@@ -126,7 +126,7 @@ def test_delegated_diagnostics_pass_through(capsys) -> None:
 
 def test_passing_delegations_say_nothing(capsys) -> None:
     ok = delegated.Delegation("likec4", ["likec4"], Result(0, "quiet\n", ""))
-    assert delegated.report([ok])
+    assert delegated.report([ok]) == 0
     assert capsys.readouterr().out == ""
 
 
@@ -140,3 +140,15 @@ def test_doctor_probes_node_only_for_likec4_projects(tmp_path: Path, monkeypatch
     doctor = RUNNER.invoke(app, ["doctor"]).stdout
     assert "skip node" not in doctor
     assert "ok   likec4" in doctor
+
+
+def test_report_says_when_no_shape_is_orphaned(tmp_path: Path, monkeypatch) -> None:
+    ctx = stub_context(tmp_path)
+    monkeypatch.setattr("slarti.cli._context", lambda: ctx)
+    stdout = RUNNER.invoke(app, ["report"]).stdout
+    assert "Orphaned shapes (declared, unreferenced):\n  none\n" in stdout
+
+
+def test_help_shows_no_double_backticks() -> None:
+    assert "``" not in RUNNER.invoke(app, ["--help"]).stdout
+    assert "``" not in RUNNER.invoke(app, ["check", "--help"]).stdout

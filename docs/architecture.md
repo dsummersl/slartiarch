@@ -130,17 +130,15 @@ enforces.
 
 The people who use `slarti`, the sources they edit, and the tools it delegates to.
 This diagram is hand-written. The Mermaid adapter reads it back, so every box is
-attached to an element in `docs/slarti/instances/`. The arrows out of `slarti`
-summarise its containers' relations, so each is ignored with a reason.
+attached to an element in `docs/slarti/instances/`. An arrow to or from `slarti`
+depicts the relation of the same name to or from one of its containers (`DANGLE-2`
+rolls it up); the arrows that summarise several relations are ignored with a reason.
 
 ```mermaid
 C4Context
   title slarti in context
-  %% slarti: ignore architect -> slarti derived from the architect's relation to the CLI, drawn in the containers view
-  %% slarti: ignore agent -> slarti derived from the agent's relation to the CLI, drawn in the containers view
   %% slarti: ignore slarti -> likec4 derived from the containers' relations to LikeC4, drawn in the containers view
   %% slarti: ignore slarti -> linkml derived from the containers' relations to LinkML, drawn in the containers view
-  %% slarti: ignore slarti -> pyshacl derived from the checks' relation to pyshacl, drawn in the containers view
   %% slarti: ignore slarti -> sources derived from the containers' relations to the sources, drawn in the containers view
   Person(architect, "Architect", "Owns the prose: goals, constraints, decisions.")
   Person(agent, "LLM agent", "Edits model sources between sessions.")

@@ -100,7 +100,7 @@ The tool's own constitution. Each is testable; each has a test in `slarti`'s sui
 | I3 | Running an underlying tool directly produces the same result as running it via `slarti`. | Test: `likec4 validate` and `slarti check` produce identical LikeC4 diagnostics. |
 | I4 | `slarti` holds no cache and no state file. Everything is derived on each invocation from the same sources the underlying tools read. | Test: no writes outside declared output paths; no `.slarti/` state dir exists. |
 | I5 | Styling, view definitions and element kinds belong entirely to the user, in `specification` blocks and `likec4.config.ts`. `slarti` injects no styles and has no theme. | Test: generated output contains no `classDef`, no color, no style directive authored by `slarti`. |
-| I6 | Config is passed through, never mirrored. `slarti` reads the user's `likec4.config.ts` and `pyproject.toml` locations; it does not restate their settings. | Review: `slarti.toml` contains paths and nothing else. |
+| I6 | Config is passed through, never mirrored. `slarti` reads the user's `likec4.config.ts` and `pyproject.toml` locations; it does not restate their settings. | Review: `slarti.toml` contains paths and the opt-ins of `slarti`'s own checks (`[checks]`), nothing another tool owns. |
 | I7 | Generation is idempotent. Running `slarti check --fix` twice produces byte-identical output. | Test: hash comparison across two runs. |
 | I8 | `slarti` checks instances of its own LinkML vocabulary. Built-in adapters (LikeC4, Mermaid) produce them; any other producer is equally valid. No plugin API and no registry of adapters. *Supersedes the original "exactly two backends: LikeC4 and LinkML"; see ADR-0004 (accepted).* | Review: no plugin interface, no third-party code loaded. |
 | I9 | Supported version ranges are enforced at runtime. Outside the range, `slarti` refuses to run rather than producing possibly-wrong output. | Test: mocked version probes at range boundaries. |
@@ -176,7 +176,7 @@ Created by `slarti init`, and assumed thereafter. Paths are configurable in
 `slarti.toml` but the defaults are the convention:
 
 ```
-slarti.toml                     paths only; no settings mirrored from other tools
+slarti.toml                     paths and slarti's own check opt-ins; nothing mirrored
 AGENTS.md                     the agent contract (scaffolded, then user-owned)
 
 docs/

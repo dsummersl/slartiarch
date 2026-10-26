@@ -33,7 +33,8 @@ def check(ctx: Context, include_docs: bool = True) -> tuple[Report, bool]:
     Malformed instance input stops the run before any seam check reads it."""
     report = Report()
     delegations = delegated.run_all(ctx.config)
-    delegated_ok = delegated.report(delegations)
+    report.delegated_failures = delegated.report(delegations)
+    delegated_ok = report.delegated_failures == 0
     malformed = ctx.models.instances.findings
     if malformed:
         report.extend(malformed)

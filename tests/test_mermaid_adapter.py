@@ -358,6 +358,30 @@ def test_an_unlabelled_edge_needs_a_disposition(tmp_path: Path, blanket: str,
     assert {f.id for f in findings_for(models_for("d.mmd", root=tmp_path))} == expected
 
 
+def test_a_message_depicts_the_one_relation_between_its_elements(tmp_path: Path) -> None:
+    source = ("sequenceDiagram\n  %% slarti: attach api todo.api\n"
+              "  %% slarti: attach db todo.db\n  api->>db: load tasks\n")
+    (tmp_path / "d.mmd").write_text(source, encoding="utf-8")
+    assert findings_for(models_for("d.mmd", root=tmp_path)) == []
+
+
+def test_a_c4_relationship_still_names_its_relation(tmp_path: Path) -> None:
+    source = ('C4Container\n  Container(api, "API")\n  ContainerDb(db, "DB")\n'
+              '  Rel(api, db, "load tasks")\n')
+    (tmp_path / "d.mmd").write_text(source, encoding="utf-8")
+    (finding,) = [f for f in findings_for(models_for("d.mmd", root=tmp_path))
+                  if f.id == "DANGLE-2"]
+    assert "it declares 'reads tasks'" in finding.message
+    assert "'%% slarti: attach api -> db <relation>'" in finding.remedy
+
+
+def test_mermaid_remedies_are_directives() -> None:
+    fixture = "sequence/invalid/ATTACH-1--undeclared.mmd"
+    (finding,) = findings_for(models_for(fixture))
+    assert finding.id == "ATTACH-1"
+    assert "'%% slarti: attach worker <element-id>'" in finding.remedy
+
+
 def diagram_edges(models: Models) -> list[dict[str, Any]]:
     return [e for doc in models.mermaid.documents.values() for d in doc["diagrams"]
             for e in d["edges"]]

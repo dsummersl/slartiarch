@@ -150,6 +150,21 @@ sequenceDiagram
 Syntax outside the supported subset is a finding, never a silent skip. See
 [docs/mermaid.md](docs/mermaid.md) for the subset, the directives and the findings.
 
+### Elements and relations that must be drawn
+
+An element or relation no diagram draws is not a finding unless its kind opts in.
+Name the kinds in the config, the C4 profile's included, and every element
+(`DRAWN-1`) and relation (`DRAWN-2`) of those kinds, or of kinds beneath them,
+must appear in some diagram:
+
+```toml
+[checks]
+drawn = ["Person", "Container", "Relationship"]
+```
+
+A schema can opt a kind in instead with `annotations: {drawn: true}`. See
+[docs/producers.md](docs/producers.md#elements-and-relations-that-must-be-drawn).
+
 ### The C4 profile
 
 C4 is an optional profile, not the model. A project that draws its architecture

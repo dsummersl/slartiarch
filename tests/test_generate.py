@@ -41,7 +41,38 @@ def test_tables_are_sorted_and_deterministic() -> None:
 
 def test_empty_tables_say_so() -> None:
     assert generate.constraints_table([]) == "_No enforced rules._"
-    assert generate.unverified_table([]) == "_Every rule is enforced._"
+    assert generate.unverified_table([]) == "_No rules are declared._"
+    assert generate.unverified_table([ENFORCED]) == "_Every rule is enforced._"
+
+
+ERD = """erDiagram
+Service {
+    integer port  
+    string id  
+    stringList owns  
+}
+Store {
+    string id  
+}
+
+Service ||--|o Store : "store"
+Service ||--}o Store : "owns"
+"""
+
+
+def test_the_erd_hides_slots_only_an_imported_schema_declares() -> None:
+    shown = generate._hide_inherited(ERD, {"Service": {"id", "owns"}})
+    assert "string id" in shown  # Store's own
+    assert "owns" not in shown
+    assert 'Service ||--|o Store : "store"' in shown
+    assert "integer port" in shown
+
+
+def test_inherited_slots_are_an_option_for_slarti_not_gen_erdiagram() -> None:
+    region = "linkml_erd?inherited_slots=true&max_hops=2"
+    assert generate._parse_erd_opts(region) == ["--max-hops", "2"]
+    assert generate._keeps_inherited(region)
+    assert not generate._keeps_inherited("linkml_erd")
 
 
 def test_ownership_table_names_the_owner(models) -> None:

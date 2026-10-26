@@ -64,9 +64,10 @@ class Models:
     def vocabulary(self) -> Corpus:
         """Every producer's instances in one corpus: the adapters', then the instance files'."""
         adapted = Corpus()
-        for documents in (self.likec4, self.mermaid.documents):
+        produced = {"likec4": self.likec4, "mermaid": self.mermaid.documents}
+        for notation, documents in produced.items():
             for file, raw in sorted(documents.items()):
-                instances.add(adapted, file, raw)
+                instances.add(adapted, file, raw, notation)
         return adapted.merged(self.instances)
 
     @cached_property

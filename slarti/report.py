@@ -106,8 +106,10 @@ CHECKS: dict[str, str] = {
     ),
     "ATTACH-1": (
         "A diagram node or edge has no disposition: it is neither attached nor ignored.\n"
-        "Remedy: attach it ('element' on a node, 'relation' on an edge), or give it "
-        "'ignored: <reason>'."
+        "Remedy: attach it, or ignore it with a reason. In an instance file, write "
+        "'element' on a node or 'relation' on an edge, or 'ignored: <reason>'; in a Mermaid "
+        "diagram, write '%% slarti: attach <node> <element>' or "
+        "'%% slarti: ignore <node> <reason>', or draw the node with a class or C4 macro."
     ),
     "ATTACH-2": (
         "A diagram node or edge is both attached and ignored.\n"
@@ -131,11 +133,16 @@ CHECKS: dict[str, str] = {
     ),
     "DANGLE-2": (
         "An edge depicts a relation the architecture does not declare between the "
-        "elements its endpoints depict.\n"
-        "Remedy: declare the relation, or correct the edge's 'relation'."
+        "elements its endpoints depict. An edge to an element that others sit inside "
+        "(through 'system' or 'container') also depicts the relation of that name to "
+        "those; a sequence message also depicts the one relation between its elements.\n"
+        "Remedy: declare the relation, or correct the edge's 'relation'; in a Mermaid "
+        "diagram, relabel the edge or write '%% slarti: attach <source> -> <target> "
+        "<relation>'."
     ),
     "DANGLE-3": (
-        "An attached edge has an endpoint node that is ignored or unattached.\n"
+        "An attached edge has an endpoint node that is ignored. An endpoint that is "
+        "unattached already has its own ATTACH-* finding, so the edge has none.\n"
         "Remedy: attach the endpoint node to an element, or ignore the edge with a reason."
     ),
     "DANGLE-4": (
@@ -143,9 +150,17 @@ CHECKS: dict[str, str] = {
         "Remedy: point the edge at declared node ids, or add the missing node."
     ),
     "DRAWN-1": (
-        "An element of a kind annotated 'drawn: true' appears in no diagram.\n"
-        "Remedy: attach a node in some diagram to the element, or drop the annotation "
-        "from its kind."
+        "An element of a kind that must be drawn appears in no diagram. A kind must be "
+        "drawn when it, or a kind above it, is listed in '[checks] drawn' in the config "
+        "or annotated 'drawn: true' in the schema.\n"
+        "Remedy: attach a node in some diagram to the element, or drop its kind from "
+        "'[checks] drawn' and the annotation."
+    ),
+    "DRAWN-2": (
+        "A relation of a kind that must be drawn is depicted by no edge in any diagram. "
+        "A kind must be drawn as for DRAWN-1.\n"
+        "Remedy: draw an edge for the relation between nodes attached to its elements, or "
+        "drop its kind from '[checks] drawn' and the annotation."
     ),
     "KIND-1": (
         "A node drawn as one or more element kinds (a Mermaid class or C4 macro) depicts "
@@ -381,6 +396,8 @@ class Report:
         lines.append("")
         lines.append("Orphaned shapes (declared, unreferenced):")
         lines.extend(f"  {s.curie}  {s.file}" for s in self.orphaned)
+        if not self.orphaned:
+            lines.append("  none")
         lines.append("")
         lines.append("Checks:")
         lines.extend(f"  {c.id}  {c.description.splitlines()[0]}" for c in self.checks)
