@@ -39,6 +39,29 @@ def localised(text: str, force: bool = False) -> str:
     return _PREFIX_LINE.sub(lambda m: m.group(1) + SCHEMA.parent.as_uri() + "/", text)
 
 
+def staged(schemas: list[Path], target: Path) -> Path:
+    """Copy schemas into ``target`` beside copies of the vocabulary and its profiles, every
+    ``slarti:`` import rewritten to the sibling copy.
+
+    For tools that take no importmap and merge prefixes strictly, such as
+    ``linkml-convert``; namespaces are left as declared, so converted data keeps its IRIs."""
+    sources = {IMPORT: SCHEMA, **PROFILES}
+    local = {name: target / f"_slarti_{path.stem}" for name, path in sources.items()}
+
+    def rewrite(text: str) -> str:
+        for name, copy in local.items():
+            pattern = rf"^(\s*-\s*){re.escape(name)}\s*$"
+            replacement = r"\g<1>" + str(copy).replace("\\", "\\\\")
+            text = re.sub(pattern, replacement, text, flags=re.MULTILINE)
+        return text
+
+    copies = {local[name].with_suffix(".yaml"): path for name, path in sources.items()}
+    copies |= {target / schema.name: schema for schema in schemas}
+    for copy, source in copies.items():
+        copy.write_text(rewrite(source.read_text(encoding="utf-8")), encoding="utf-8")
+    return target
+
+
 def write_importmap(target: Path) -> Path:
     """Write the importmap as the JSON file LinkML's generators read."""
     target.write_text(json.dumps(importmap()), encoding="utf-8")
@@ -67,6 +90,7 @@ __all__ = [
     "importmap",
     "imports_vocabulary",
     "localised",
+    "staged",
     "profile_versions",
     "version",
     "write_importmap",

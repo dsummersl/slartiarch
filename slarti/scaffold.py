@@ -17,6 +17,7 @@ documents = ["docs/architecture.md"]
 LIKEC4_PATHS = 'likec4 = "docs/slarti/likec4"\n'
 
 INSTANCE_PATHS = """instances = ["docs/slarti/instances"]
+mermaid = ["docs/architecture.md"]
 # likec4 = "docs/slarti/likec4"  # optional; needs Node (see: slartiarch init --likec4)
 """
 

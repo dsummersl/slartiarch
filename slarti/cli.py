@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from contextlib import nullcontext, redirect_stdout
 from pathlib import Path
 
 import typer
@@ -9,6 +10,7 @@ from slarti import __version__, docs, env, report, runner, scaffold, vocabulary
 from slarti import config as config_module
 from slarti.adapters.likec4 import AdapterError
 from slarti.domain import Probe
+from slarti.findings import Report
 from slarti.registry import RegistryError
 
 app = typer.Typer(
@@ -23,7 +25,7 @@ app = typer.Typer(
         "  • Document ↔ models  — the drift gate (DOC-1, DOC-3, DOC-4)\n"
         "  • Document ↔ rules  — the constraint registry (REG-1..REG-7)\n"
         "  • Instance inputs   — vocabulary instances any tool may produce (INP-1..INP-3)\n"
-        "  • Mermaid diagrams  — sequence and ER diagrams read in Python (MMD-1..MMD-4)\n"
+        "  • Mermaid diagrams  — sequence, ER and C4 diagrams read in Python (MMD-1..MMD-4)\n"
         "  • Diagrams ↔ elements — attachment, identity, dangling, drawn, kind\n"
         "    (ATTACH-*, IDENT-*, DANGLE-*, DRAWN-1, KIND-1)\n"
         "Everything else — parsing, validation, rendering — is delegated.\n"
@@ -202,10 +204,19 @@ def check(
     ``<!-- slarti:begin linkml_erd?classes=Finding,Report&exclude_attributes=true -->``.
     Underscores in option names are converted to hyphens (``max_hops`` → ``--max-hops``)."""
     ctx = _fixed(_context()) if fix else _context()
-    report, delegated_ok = runner.check(ctx, include_docs=not skip_docs)
+    report, delegated_ok = _checked(ctx, json_output, include_docs=not skip_docs)
     typer.echo(report.as_json_verbose() if json_output else report.as_text())
     failed = report.errors > 0 or not delegated_ok
     raise typer.Exit(EXIT_FINDINGS if failed else EXIT_CLEAN)
+
+
+def _checked(ctx: runner.Context, json_output: bool, include_docs: bool) -> tuple[Report, bool]:
+    """Run the checks; under --json, delegated diagnostics go to stderr so stdout stays JSON."""
+    with redirect_stdout(sys.stderr) if json_output else nullcontext():
+        result, delegated_ok = runner.check(ctx, include_docs=include_docs)
+    if not delegated_ok:
+        typer.echo("error: a delegated validation failed; its output is above.", err=True)
+    return result, delegated_ok
 
 
 def _fixed(ctx: runner.Context) -> runner.Context:
