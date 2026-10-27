@@ -69,6 +69,19 @@ The adapter decides each disposition in this order:
   the relation it depicts (`DANGLE-2` checks that the architecture declares it).
   Then `ignore *`. An unlabelled edge with none of these has no disposition.
 
+A label does not always have to repeat a relation's description word for word:
+
+- A **sequence message** depicts the one relation declared between its two
+  elements, whatever its label, when exactly one is declared. With several, the
+  label picks one, or an `attach <source> -> <target> <relation>` directive does.
+- An edge to or from a **software system** (or any element others name in
+  `system` or `container`) depicts the relation of the same label to or from any
+  element inside it. `Rel(user, todo, "manages tasks")` in a context diagram
+  depicts a declared `user -> todo.cli: manages tasks`, with no `ignore` needed.
+
+A reply, such as `store-->>core: the task`, depicts no relation from `store` to
+`core`; ignore it with a directive (`%% slarti: ignore store -> core a reply`).
+
 A directive that is malformed, or that names a node or edge the diagram does not
 draw, is `MMD-4`.
 
@@ -233,6 +246,16 @@ More types are added one at a time.
 | `MMD-3` | A line is outside the supported subset of its diagram type. The finding names the line. |
 | `MMD-4` | A `%% slarti:` directive is malformed, or names a node or edge the diagram does not draw. |
 | `KIND-1` | A node's class names a kind its element is not. |
+
+The structural findings (`ATTACH-*`, `DANGLE-*`, …; see
+[producers.md](producers.md#dispositions)) give their remedies as directives for a
+Mermaid node or edge, and come out sorted by file and line. A node with no
+disposition is reported once: the edges that end at it get no `DANGLE-3` of their
+own.
+
+To be told about an element or relation no diagram draws, opt its kind in to
+`DRAWN-1` and `DRAWN-2` with `[checks] drawn = ["Container", "Person", …]` in the
+config (see [producers.md](producers.md#elements-and-relations-that-must-be-drawn)).
 
 A diagram with an `MMD-2` or `MMD-3` finding contributes no nodes or edges. The
 rest of the run goes on: the other diagrams are still checked.

@@ -74,7 +74,7 @@ elements:
     system: slarti
     name: Config
     aliases: [settings]
-    description: "Reads slarti.toml: paths only, no mirrored settings."
+    description: "Reads slarti.toml: paths and the opt-ins of slarti's own checks, no mirrored settings."
     owns: [ProjectPaths]
   - id: slarti.adapters
     kind: Container

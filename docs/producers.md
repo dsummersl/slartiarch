@@ -106,7 +106,17 @@ exists to surface.
 A node attaches by an element's `id` or one of its `aliases`, so diagrams can use
 the names they already show. An edge's `relation` must match the `kind` (or title)
 of a relation declared from the element its source node depicts to the element its
-target node depicts.
+target node depicts. Two looser matches spare a diagram from restating the model:
+
+- **Roll-up.** An element sits inside another when it names it in `system` or
+  `container`, as the C4 profile's `Container` and `Component` do. An edge to or
+  from the outer element also depicts a relation of the same name to or from
+  anything inside it, at any depth. A context diagram's `user -> todo: manages
+  tasks` depicts the declared `user -> todo.cli: manages tasks`.
+- **Sequence messages.** A `Message` edge whose `relation` matches nothing depicts
+  the relation between its two elements when exactly one is declared, whatever its
+  label, so a message can say `load task` where the relation says `reads and
+  writes`.
 
 | ID         | Meaning                                                                   |
 | ---------- | ------------------------------------------------------------------------- |
@@ -117,15 +127,32 @@ target node depicts.
 | `IDENT-2`  | A node attaches through a name that resolves to more than one element.    |
 | `DANGLE-1` | A node attaches to a name no element declares.                            |
 | `DANGLE-2` | An edge's relation is not declared between its endpoints' elements.       |
-| `DANGLE-3` | An attached edge ends at a node that is ignored or unattached.            |
+| `DANGLE-3` | An attached edge ends at a node that is ignored.                          |
 | `DANGLE-4` | An edge ends at a node id no diagram declares.                            |
 | `DRAWN-1`  | An element of a kind that must be drawn appears in no diagram (opt-in).   |
+| `DRAWN-2`  | A relation of a kind that must be drawn is depicted by no edge (opt-in).  |
 | `KIND-1`   | A node's `element_kinds` names no kind its element is, or descends from.  |
 
 Node and edge findings point at the `location` the producer read, not at the
-instance file. The reverse check is opt-in per element kind: annotate the kind in
-the project schema, and every element of that kind, or of a kind beneath it, must
-be attached to by at least one node.
+instance file, and their remedies are written in the notation the construct came
+from: instance slots for an instance file, `%% slarti:` directives for a Mermaid
+diagram. An edge whose endpoint node has no disposition, or a broken one, is not
+reported again as `DANGLE-3`; the node's own `ATTACH-*` finding covers it.
+
+### Elements and relations that must be drawn
+
+By default, an element or relation that no diagram draws is not a finding. The
+reverse checks, `DRAWN-1` for elements and `DRAWN-2` for relations, are opt-in per
+kind. List the kinds in the config, which needs no change to any schema and works
+for the C4 profile's kinds as they are:
+
+```toml
+# slarti.toml (or [tool.slartiarch.checks] in pyproject.toml)
+[checks]
+drawn = ["Person", "Container", "Relationship"]
+```
+
+or annotate a kind in the project schema:
 
 ```yaml
 classes:
@@ -133,6 +160,10 @@ classes:
     is_a: Element
     annotations: {drawn: true}
 ```
+
+Either way, every element of that kind, or of a kind beneath it, must be attached
+to by at least one node, and every relation of that kind must be depicted by at
+least one attached edge (a roll-up edge counts).
 
 ## The built-in LikeC4 adapter
 

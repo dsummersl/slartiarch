@@ -95,5 +95,8 @@ shacl_invalid = "docs/slarti/data/invalid"
 documents = ["docs/architecture.md"]
 mermaid = ["docs/architecture.md"]
 
+[tool.slartiarch.checks]
+drawn = ["Person", "SoftwareSystem", "Container", "Relationship"]
+
 [tool.pytest.ini_options]
 addopts = "--cov=slarti  --cov-report=term-missing"

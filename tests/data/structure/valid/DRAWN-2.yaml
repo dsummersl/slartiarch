@@ -1,0 +1,41 @@
+# Reads relations must be drawn; an edge depicts api -> db.
+id: https://example.org/todo
+name: todo
+prefixes:
+  todo: https://example.org/todo/
+  linkml: https://w3id.org/linkml/
+  slarti: https://dsummersl.github.io/slarti/
+default_prefix: todo
+default_range: string
+imports:
+  - linkml:types
+  - slarti:vocabulary
+classes:
+  Service:
+    is_a: Element
+  Database:
+    is_a: Element
+  Reads:
+    is_a: Relation
+    annotations: {drawn: true}
+---
+elements:
+  - {id: todo.api, kind: Service, name: API, aliases: [api]}
+  - {id: todo.db, kind: Database, name: Database}
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db}
+diagrams:
+  - id: d
+    location: {file: notes.md, line: 1}
+    nodes:
+      - id: d/api
+        location: {file: notes.md, line: 2}
+        element: todo.api
+      - id: d/db
+        location: {file: notes.md, line: 3}
+        element: todo.db
+    edges:
+      - source: d/api
+        target: d/db
+        location: {file: notes.md, line: 4}
+        relation: Reads

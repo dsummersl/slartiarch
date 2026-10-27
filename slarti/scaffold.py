@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-CONFIG = """# slarti: paths only. Settings belong to the tools that own them.
+CONFIG = """# slarti: paths, and opt-ins for slarti's own checks. Settings belong to the tools
+# that own them.
 [paths]
 {structure}linkml = "docs/slarti/linkml"
 # linkml_index = "slarti.yaml"  # optional; root schema when splitting across files
@@ -12,6 +13,10 @@ constraints = "docs/slarti/constraints.yaml"
 shacl_valid = "docs/slarti/data/valid"
 shacl_invalid = "docs/slarti/data/invalid"
 documents = ["docs/architecture.md"]
+
+[checks]
+# Kinds every element or relation of which some diagram must draw (DRAWN-1, DRAWN-2).
+# drawn = ["Container", "Person"]
 """
 
 LIKEC4_PATHS = 'likec4 = "docs/slarti/likec4"\n'

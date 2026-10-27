@@ -15,6 +15,9 @@ from slarti.domain import Finding, ModelElement, ModelRelation, Severity
 
 SUFFIXES = (".yaml", ".yml", ".json")
 TARGET_CLASS = "Corpus"
+INSTANCES = "instances"
+# The slots by which a C4 profile element names the element it sits inside.
+CONTAINED_BY = ("system", "container")
 
 
 @dataclass(frozen=True)
@@ -29,6 +32,9 @@ class Drawn:
     source: str = ""
     target: str = ""
     kinds: tuple[str, ...] = ()
+    kind: str = ""
+    name: str = ""
+    notation: str = INSTANCES
 
     @property
     def is_edge(self) -> bool:
@@ -46,7 +52,9 @@ class Corpus:
 
     elements: dict[str, ModelElement] = field(default_factory=dict)
     relations: list[ModelRelation] = field(default_factory=list)
+    relation_files: list[str] = field(default_factory=list)
     element_files: dict[str, str] = field(default_factory=dict)
+    parents: dict[str, str] = field(default_factory=dict)
     aliases: dict[str, list[str]] = field(default_factory=dict)
     nodes: list[Drawn] = field(default_factory=list)
     edges: list[Drawn] = field(default_factory=list)
@@ -59,12 +67,29 @@ class Corpus:
     def has_relation(self, source: str, target: str) -> bool:
         return any(r.source == source and r.target == target for r in self.relations)
 
+    def relation_file(self, index: int) -> str:
+        files = self.relation_files
+        return files[index] if index < len(files) else ""
+
+    def within(self, element: str, outer: str) -> bool:
+        """Whether an element is the outer element or sits inside it, at any depth."""
+        seen: set[str] = set()
+        current: str | None = element
+        while current is not None and current not in seen:
+            if current == outer:
+                return True
+            seen.add(current)
+            current = self.parents.get(current)
+        return False
+
     def merged(self, other: Corpus) -> Corpus:
         """This corpus with another's instances added; the other's element wins on a shared id."""
         return Corpus(
             elements=self.elements | other.elements,
             relations=[*self.relations, *other.relations],
+            relation_files=[*self.relation_files, *other.relation_files],
             element_files=self.element_files | other.element_files,
+            parents=self.parents | other.parents,
             aliases=self.aliases | other.aliases,
             nodes=[*self.nodes, *other.nodes],
             edges=[*self.edges, *other.edges],
@@ -164,7 +189,7 @@ def _optional(raw: dict[str, Any], key: str) -> str | None:
     return None if value is None else str(value)
 
 
-def _drawn(raw: dict[str, Any], identifier: str, attachment: str) -> Drawn:
+def _drawn(raw: dict[str, Any], identifier: str, attachment: str, notation: str) -> Drawn:
     location = raw["location"]
     return Drawn(
         id=identifier,
@@ -175,6 +200,9 @@ def _drawn(raw: dict[str, Any], identifier: str, attachment: str) -> Drawn:
         source=str(raw.get("source", "")),
         target=str(raw.get("target", "")),
         kinds=tuple(str(k) for k in raw.get("element_kinds") or []),
+        kind=str(raw.get("kind", "")),
+        name=str(location.get("source_id") or ""),
+        notation=notation,
     )
 
 
@@ -182,9 +210,11 @@ def _edge_id(raw: dict[str, Any]) -> str:
     return f"{raw['source']} -> {raw['target']}"
 
 
-def _add_diagram(corpus: Corpus, raw: dict[str, Any]) -> None:
-    corpus.nodes.extend(_drawn(n, str(n["id"]), "element") for n in _listed(raw, "nodes"))
-    corpus.edges.extend(_drawn(e, _edge_id(e), "relation") for e in _listed(raw, "edges"))
+def _add_diagram(corpus: Corpus, raw: dict[str, Any], notation: str) -> None:
+    corpus.nodes.extend(_drawn(n, str(n["id"]), "element", notation)
+                        for n in _listed(raw, "nodes"))
+    corpus.edges.extend(_drawn(e, _edge_id(e), "relation", notation)
+                        for e in _listed(raw, "edges"))
 
 
 def _add_element(corpus: Corpus, file: str, raw: dict[str, Any]) -> None:
@@ -192,19 +222,28 @@ def _add_element(corpus: Corpus, file: str, raw: dict[str, Any]) -> None:
     corpus.elements[identifier] = _element(raw)
     corpus.element_files[identifier] = file
     corpus.aliases[identifier] = [str(a) for a in raw.get("aliases") or []]
+    corpus.parents |= _parent(identifier, raw)
+
+
+def _parent(identifier: str, raw: dict[str, Any]) -> dict[str, str]:
+    """The element an element names as the one it sits inside, if it names one."""
+    parents = [str(raw[slot]) for slot in CONTAINED_BY if raw.get(slot)]
+    return dict.fromkeys([identifier], parents[0]) if parents else {}
 
 
 def _listed(raw: dict[str, Any], key: str) -> list[dict[str, Any]]:
     return list(raw.get(key) or [])
 
 
-def add(corpus: Corpus, file: str, raw: dict[str, Any]) -> None:
-    """Add one vocabulary instance, read from ``file``, to the corpus."""
+def add(corpus: Corpus, file: str, raw: dict[str, Any], notation: str = INSTANCES) -> None:
+    """Add one vocabulary instance, read from ``file`` and drawn in ``notation``, to the corpus."""
     for element in _listed(raw, "elements"):
         _add_element(corpus, file, element)
-    corpus.relations.extend(_relation(r) for r in _listed(raw, "relations"))
+    relations = _listed(raw, "relations")
+    corpus.relations.extend(_relation(r) for r in relations)
+    corpus.relation_files.extend(file for _ in relations)
     for diagram in _listed(raw, "diagrams"):
-        _add_diagram(corpus, diagram)
+        _add_diagram(corpus, diagram, notation)
 
 
 def _findings(config: Config, path: Path, raw: dict[str, Any], view: SchemaView) -> list[Finding]:

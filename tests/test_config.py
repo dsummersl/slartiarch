@@ -32,6 +32,18 @@ def test_unknown_keys_are_rejected(tmp_path: Path) -> None:
         config_module.load(tmp_path)
 
 
+def test_checks_name_the_kinds_that_must_be_drawn(tmp_path: Path) -> None:
+    (tmp_path / "slarti.toml").write_text('[checks]\ndrawn = ["Container"]\n',
+                                          encoding="utf-8")
+    assert config_module.load(tmp_path).drawn == ["Container"]
+
+
+def test_unknown_check_keys_are_rejected(tmp_path: Path) -> None:
+    (tmp_path / "slarti.toml").write_text('[checks]\nstrict = true\n', encoding="utf-8")
+    with pytest.raises(config_module.ConfigError, match="strict"):
+        config_module.load(tmp_path)
+
+
 def test_rel_is_relative_to_the_root(tmp_path: Path) -> None:
     cfg = config_module.Config(root=tmp_path)
     assert cfg.rel(tmp_path / "docs" / "slarti" / "x.yaml") == "docs/slarti/x.yaml"

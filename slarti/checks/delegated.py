@@ -56,11 +56,9 @@ def run_all(config: Config) -> list[Delegation]:
     return [*likec4, *linkml_lint(config)]
 
 
-def report(delegations: list[Delegation]) -> bool:
-    """Pass every delegated diagnostic through unaltered; True if all passed."""
-    ok = True
-    for delegation in delegations:
-        if not delegation.ok:
-            ok = False
-            proc.passthrough(delegation.result)
-    return ok
+def report(delegations: list[Delegation]) -> int:
+    """Pass every delegated diagnostic through unaltered; the number that failed."""
+    failed = [d for d in delegations if not d.ok]
+    for delegation in failed:
+        proc.passthrough(delegation.result)
+    return len(failed)

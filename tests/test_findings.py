@@ -31,6 +31,24 @@ def test_findings_are_sorted_stably() -> None:
     assert [f.id for f in report.sorted_findings()] == ["DOC-1", "OWN-1", "REG-2"]
 
 
+def test_findings_are_sorted_by_file_then_line() -> None:
+    def at(file: str, line: int, rule: str) -> Finding:
+        return Finding(id=rule, severity="error", file=file, line=line, subject="s",
+                       message="m", remedy="r")
+
+    report = Report([at("b.md", 1, "ATTACH-1"), at("a.md", 44, "ATTACH-1"),
+                     at("a.md", 43, "DANGLE-2")])
+    assert [(f.file, f.line) for f in report.sorted_findings()] == [
+        ("a.md", 43), ("a.md", 44), ("b.md", 1)]
+
+
+def test_the_summary_says_delegated_failures_are_counted_apart() -> None:
+    report = Report(checked=3)
+    report.delegated_failures = 1
+    assert "1 delegated validation(s) failed" in report.as_text()
+    assert "1 delegated" not in Report(checked=3).as_text()
+
+
 def test_line_is_omitted_when_unknown() -> None:
     bare = Finding(id="OWN-1", severity="error", file="f", subject="s", message="m", remedy="r")
     assert "line" not in bare.model_dump(exclude_none=True)

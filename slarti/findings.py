@@ -25,6 +25,7 @@ class Report:
     def __init__(self, findings: list[Finding] | None = None, checked: int = 0) -> None:
         self.findings: list[Finding] = list(findings or [])
         self.checked = checked
+        self.delegated_failures = 0
 
     def add(self, finding: Finding) -> None:
         self.findings.append(finding)
@@ -41,7 +42,8 @@ class Report:
         return sum(1 for f in self.findings if f.severity == Severity.warning)
 
     def sorted_findings(self) -> list[Finding]:
-        return sorted(self.findings, key=lambda f: (f.id, f.file, f.subject))
+        """Findings in reading order: by file, then line, then rule."""
+        return sorted(self.findings, key=lambda f: (f.file, f.line or 0, f.id, f.subject))
 
     def as_schema(self) -> ReportSchema:
         """The run as the generated `Report`, validated on construction."""
@@ -74,13 +76,21 @@ class Report:
         }
         return json.dumps(payload, indent=2, sort_keys=False)
 
+    def _delegated(self) -> str:
+        """The delegated failures, whose diagnostics their tools reported, not counted here."""
+        if not self.delegated_failures:
+            return ""
+        return (f" {self.delegated_failures} delegated validation(s) failed; their own "
+                "output, above, is not counted in these totals.")
+
     def as_text(self) -> str:
         if not self.findings:
-            return f"No findings ({self.checked} checks)."
+            return f"No findings ({self.checked} checks).{self._delegated()}"
         lines = []
         for f in self.sorted_findings():
             where = f.file if f.line is None else f"{f.file}:{f.line}"
             lines.append(f"{f.severity}: [{f.id}] {where}: {f.message}")
             lines.append(f"  remedy: {f.remedy}")
-        lines.append(f"{self.errors} error(s), {self.warnings} warning(s), {self.checked} checks.")
+        lines.append(f"{self.errors} error(s), {self.warnings} warning(s), "
+                     f"{self.checked} checks.{self._delegated()}")
         return "\n".join(lines)
