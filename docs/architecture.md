@@ -430,6 +430,12 @@ case, not a failure: each entry must say why enforcement is not possible.
   `docs/adr/0005-one-command-checks-the-document.md`. `slarti check` reports every
   finding, the document's included; `slarti check --fix` regenerates the generated
   regions first. Diagrams are no longer committed as separate files.
+- **ADR-0006 — Decisions are cited files (proposed).** See
+  `docs/adr/0006-decisions-are-cited-files.md`. Decision records are files matched
+  by configured glob patterns, in any format. A constraint cites one by path and
+  stores its hash. `slarti` warns about records no constraint cites, and reports a
+  constraint whose record changed since it was last reviewed. Only `slartiarch
+  review` records a hash, never `check --fix`.
 
 ## 11. Risks and technical debt
 
