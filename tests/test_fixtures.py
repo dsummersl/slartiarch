@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from slarti import fixtures
+from slarti.checks import registry_checks
 
 SHAPES = """@prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix example: <https://example.org/example/> .
@@ -89,3 +90,14 @@ def test_a_yaml_fixture_converts_under_a_schema_importing_slarti(config) -> None
     outcome = fixtures.validate(config, write(config, "D4.yaml", "id: example:t1\n"), "Task")
     assert outcome.error is None
     assert "example:TaskHasList" in outcome.shapes
+
+
+@needs_pyshacl
+def test_a_valid_fixture_that_violates_a_shape_is_reg9(config) -> None:
+    write(config, "d1.ttl", VIOLATING)
+    (config.path("shacl_valid") / "bad.ttl").write_text(VIOLATING, encoding="utf-8")
+    (config.path("shacl_valid") / "good.ttl").write_text(CONFORMING, encoding="utf-8")
+    findings = registry_checks._valid_fixture_findings(config, [])
+    assert [f.id for f in findings] == ["REG-9"]
+    assert findings[0].file.endswith("bad.ttl")
+    assert "example:TaskHasList" in findings[0].message

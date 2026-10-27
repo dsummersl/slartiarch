@@ -77,7 +77,12 @@ A constraint in the registry ties them together:
     kind: shacl_shape
     ref: "todo:SubtaskSharesListWithParent"
     fixture: docs/slarti/data/invalid/D8.yaml
+    fixture_class: Task   # needed for YAML fixtures; Turtle fixtures need nothing
 ```
+
+A YAML fixture's identifiers must be CURIEs (`id: todo:t1`, not `id: t1`), or the
+LinkML conversion to RDF fails with `Unknown CURIE prefix`. Fixtures under
+`data/valid/` must conform to every shape; one that does not is reported as `REG-9`.
 
 Running `slartiarch check` walks the seams: it verifies the shape exists, the fixture
 fails (proving the shape fires), both halves of the ownership claim agree, and the

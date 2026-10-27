@@ -34,6 +34,10 @@ enums:
         description: A relation that must exist in the model.
       likec4_absent_relation:
         description: A relation that must not exist in the model.
+      relation:
+        description: A relation that must exist in the model, whatever notation drew it.
+      absent_relation:
+        description: A relation that must not exist in the model, whatever notation drew it.
       likec4_element:
         description: An element that must exist in the model.
       ownership:
