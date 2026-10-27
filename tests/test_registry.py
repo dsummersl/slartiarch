@@ -116,3 +116,21 @@ def test_reg6_fixture_does_not_exist(models) -> None:
     config.document_paths()[0].write_text("ADR-004", encoding="utf-8")
     constraints = registry.load(config.path("constraints"))
     assert [f.id for f in registry_checks.check(config, models, constraints)] == ["REG-6"]
+
+
+def test_absent_relation_aliases_and_reg8_names_the_declaring_file(models) -> None:
+    config = models.config
+    text = "constraints:\n  - id: T1\n    statement: no.\n    enforced_by:\n" \
+           "      kind: absent_relation\n      ref: todo.api -> todo.db\n"
+    write_registry(config.path("constraints"), text)
+    constraints = registry.load(config.path("constraints"))
+    findings = registry_checks.check(config, models, constraints)
+    reg8 = [f for f in findings if f.id == "REG-8"]
+    assert len(reg8) == 1
+    assert "likec4" not in reg8[0].remedy.lower()
+    assert reg8[0].file == "docs/slarti/likec4/todo.c4"
+
+
+def test_a_bad_curie_error_suggests_a_curie_id() -> None:
+    assert "id: todo:t1" in registry_checks._load_remedy("Unknown CURIE prefix: @base")
+    assert "Turtle" in registry_checks._load_remedy("other")

@@ -43,6 +43,17 @@ def _stale(file: str, region: str) -> Finding:
     )
 
 
+def _ungenerated(file: str, region: str) -> Finding:
+    return Finding(
+        id="DOC-1",
+        severity=Severity.error,
+        file=file,
+        subject=region,
+        message=f"generated region '{region}' has not been generated yet.",
+        remedy="Run 'slartiarch check --fix' and commit the result.",
+    )
+
+
 def _doc4(file: str, constraint_id: str) -> Finding:
     return Finding(
         id="DOC-4",
@@ -64,7 +75,11 @@ def _region_findings(file: str, current: str, rendered: docs.Rendered) -> list[F
     if current == rendered.text:
         return []
     before, after = _bodies(current), _bodies(rendered.text)
-    return [_stale(file, name) for name in sorted(after) if before.get(name) != after[name]]
+    return [
+        _ungenerated(file, name) if not before.get(name, "").strip() else _stale(file, name)
+        for name in sorted(after)
+        if before.get(name) != after[name]
+    ]
 
 
 def _table_findings(file: str, constraints: list[Constraint], text: str) -> list[Finding]:

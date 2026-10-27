@@ -116,6 +116,18 @@ def _missing(config: Config, path: Path) -> Finding:
     )
 
 
+def _bad_schema(config: Config, path: Path | None, reason: str) -> Finding:
+    file = config.rel(path) if path else config.paths["linkml"]
+    return Finding(
+        id="INP-4",
+        severity=Severity.error,
+        file=file,
+        subject=file,
+        message=f"the project schema cannot be loaded: {reason}",
+        remedy="Correct the schema (see 'linkml lint'), then run check again.",
+    )
+
+
 def _unreadable(config: Config, path: Path, reason: str) -> Finding:
     return Finding(
         id="INP-2",
@@ -260,16 +272,28 @@ def _load_file(corpus: Corpus, config: Config, path: Path, view: SchemaView) -> 
         add(corpus, config.rel(path), raw)
 
 
+def _schema_or_finding(config: Config, corpus: Corpus) -> SchemaView | None:
+    index = config.schema_index()
+    try:
+        return validation_schema(index)
+    except Exception as exc:  # noqa: BLE001 - SchemaView raises whatever its loader hit
+        corpus.findings.append(_bad_schema(config, index, str(exc).strip().splitlines()[0]))
+        return None
+
+
+def _load_input(corpus: Corpus, config: Config, configured: Path, view: SchemaView) -> None:
+    if not configured.exists():
+        corpus.findings.append(_missing(config, configured))
+        return
+    for path in files_for(configured):
+        _load_file(corpus, config, path, view)
+
+
 def load(config: Config) -> Corpus:
     """Read and validate every configured instance input, before any seam check runs."""
     corpus = Corpus()
-    if not config.instances:
-        return corpus
-    view = validation_schema(config.schema_index())
-    for configured in config.instance_paths():
-        if not configured.exists():
-            corpus.findings.append(_missing(config, configured))
-            continue
-        for path in files_for(configured):
-            _load_file(corpus, config, path, view)
+    view = _schema_or_finding(config, corpus) if config.instances else None
+    if view is not None:
+        for configured in config.instance_paths():
+            _load_input(corpus, config, configured, view)
     return corpus

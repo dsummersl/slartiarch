@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ from slarti import env, instances, runner, vocabulary
 from slarti.checks import delegated, ownership
 from slarti.cli import app
 from slarti.models import Models
+from tests.conftest import make_config
 
 PROJECT = Path(__file__).parent / "data" / "instances" / "project"
 
@@ -140,3 +142,15 @@ def test_check_runs_on_hand_written_instances_alone(tmp_path: Path, monkeypatch)
     assert result.exit_code == 0, result.stdout
     payload = json.loads(result.stdout[result.stdout.index("{"):])
     assert payload["findings"] == []
+
+
+def test_a_malformed_schema_is_a_finding_not_a_crash(tmp_path) -> None:
+    config = replace(make_config(tmp_path), instances=["inst"])
+    (tmp_path / "inst").mkdir()
+    (config.path("linkml") / "bad.yaml").write_text(
+        "id: x\nname: x\nclasses:\n  A:\n    attributes:\n      a:\n        range: string\n"
+        "        range: integer\n",
+        encoding="utf-8",
+    )
+    corpus = instances.load(config)
+    assert [f.id for f in corpus.findings] == ["INP-4"]

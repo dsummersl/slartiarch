@@ -11,6 +11,8 @@ from slarti.registry import Constraint, is_unenforced, kind_text
 
 _KIND_TO_LAYER: dict[str | None, int | None] = {
     "likec4_element": 1,
+    "relation": 1,
+    "absent_relation": 1,
     "likec4_relation": 1,
     "likec4_absent_relation": 1,
     "ownership": 1,
@@ -74,10 +76,14 @@ CHECKS: dict[str, str] = {
         "A negative fixture fails, but the report never names the declared shape.\n"
         "Remedy: narrow the fixture, or correct the declared ref."
     ),
+    "REG-9": (
+        "A fixture under shacl_valid violates the shapes, or cannot be loaded.\n"
+        "Remedy: correct the fixture so it conforms, or relax the shape it violates."
+    ),
     "REG-8": (
-        "A likec4_absent_relation constraint is violated — the forbidden relation now exists "
+        "An absent_relation constraint is violated — the forbidden relation now exists "
         "in the model.\n"
-        "Remedy: remove the forbidden relation from the LikeC4 model."
+        "Remedy: remove the forbidden relation from the model that declares it."
     ),
     "DOC-1": (
         "A generated region is stale relative to its source.\n"
@@ -103,6 +109,10 @@ CHECKS: dict[str, str] = {
         "An instance file does not conform to the vocabulary or the project schema.\n"
         "Remedy: correct the instance so it validates as 'Corpus', or declare the missing "
         "kind in the project schema."
+    ),
+    "INP-4": (
+        "The project schema cannot be loaded, so instances cannot be validated.\n"
+        "Remedy: correct the schema error reported (see 'linkml lint'), then run check again."
     ),
     "ATTACH-1": (
         "A diagram node or edge has no disposition: it is neither attached nor ignored.\n"
@@ -236,6 +246,18 @@ def _enforcer_catalog() -> list[dict[str, Any]]:
             "kind": "linkml_class",
             "description": "A class exists in the LinkML schema",
             "ref_format": "class name, e.g. 'Finding'",
+            "optional_fields": [],
+        },
+        {
+            "kind": "relation",
+            "description": "A directed relation exists between two elements of the model",
+            "ref_format": "source -> target, e.g. 'slarti.env -> likec4'",
+            "optional_fields": [],
+        },
+        {
+            "kind": "absent_relation",
+            "description": "Two elements exist but have no relation between them",
+            "ref_format": "source -> target, e.g. 'slarti.cli -> sources'",
             "optional_fields": [],
         },
         {

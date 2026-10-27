@@ -2,10 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from slarti.config import Config
 from slarti.models import Models
 from slarti.registry import Enforcer, is_unenforced, kind_text
 
 RELATION_ARROW = "->"
+ABSENT_KINDS = ("absent_relation", "likec4_absent_relation")
+WINDOW = 4
 
 
 def _split_relation(ref: str) -> tuple[str, str] | None:
@@ -49,6 +52,36 @@ def absent_relation_violated(models: Models, ref: str) -> bool:
     return known and model.has_relation(source, target)
 
 
+def _find_line(text: str, source: str, target: str) -> int | None:
+    """Best-effort line of a relation written as source/target keys or as 'a -> b'."""
+    lines = text.splitlines()
+    for number, line in enumerate(lines, start=1):
+        if f"{source} {RELATION_ARROW} {target}" in line:
+            return number
+        if source in line and target in "\n".join(lines[number : number + WINDOW]):
+            return number
+    return None
+
+
+def _declaring_file(models: Models, pair: tuple[str, str]) -> str | None:
+    corpus = models.vocabulary
+    for index, relation in enumerate(corpus.relations):
+        if (relation.source, relation.target) == pair and corpus.relation_file(index):
+            return corpus.relation_file(index)
+    return None
+
+
+def relation_location(config: Config, models: Models, ref: str) -> tuple[str, int | None] | None:
+    """The file and line where a relation was declared, when the model records it."""
+    pair = _split_relation(ref)
+    file = _declaring_file(models, pair) if pair else None
+    if pair is None or file is None:
+        return None
+    path = config.root / file
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    return file, _find_line(text, *pair)
+
+
 def _ownership_holds(models: Models, ref: str) -> bool:
     owner = models.class_annotation(ref, "owner")
     return owner is not None and owner in models.vocabulary.elements
@@ -60,6 +93,8 @@ RESOLVERS: dict[str, Callable[[Models, str], bool]] = {
     "linkml_class": lambda models, ref: bool(
         models.schema is not None and models.schema.get_class(ref) is not None
     ),
+    "relation": _relation_exists,
+    "absent_relation": _relation_absent,
     "likec4_relation": _relation_exists,
     "likec4_absent_relation": _relation_absent,
     "likec4_element": lambda models, ref: ref in models.vocabulary.elements,

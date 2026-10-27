@@ -77,3 +77,11 @@ def test_render_is_idempotent(models, monkeypatch) -> None:
     once = docs.render(models.config, [CONSTRAINT], models, fresh)[0].text
     models.config.document_paths()[0].write_text(once, encoding="utf-8")
     assert docs.render(models.config, [CONSTRAINT], models, fresh)[0].text == once
+
+
+def test_an_empty_region_is_not_yet_generated_rather_than_stale() -> None:
+    rendered = type("R", (), {"text": "<!-- slarti:begin ownership -->\nrows\n"
+                                      "<!-- slarti:end ownership -->\n"})()
+    current = "<!-- slarti:begin ownership -->\n<!-- slarti:end ownership -->\n"
+    (finding,) = doc_checks._region_findings("a.md", current, rendered)
+    assert "has not been generated yet" in finding.message

@@ -66,20 +66,18 @@ def _reg5(config: Config, c: Constraint) -> Finding:
     )
 
 
-def _reg8(config: Config, c: Constraint) -> Finding:
+def _reg8(config: Config, models: Models, c: Constraint) -> Finding:
+    ref = c.enforced_by.ref or ""
+    declared = resolvers.relation_location(config, models, ref)
+    file, line = declared if declared else (config.paths["constraints"], c.line)
     return Finding(
         id="REG-8",
         severity=Severity.error,
-        file=config.paths["likec4"],
+        file=file,
         subject=c.id,
-        line=c.line,
-        message=(
-            f"constraint {c.id} forbids relation '{c.enforced_by.ref}', "
-            "which now exists in the model."
-        ),
-        remedy=(
-            f"Remove the forbidden relation '{c.enforced_by.ref}' from the LikeC4 model."
-        ),
+        line=line,
+        message=f"constraint {c.id} forbids relation '{ref}', which now exists in the model.",
+        remedy=f"Remove the forbidden relation '{ref}' from the model that declares it.",
     )
 
 
@@ -104,10 +102,9 @@ def _one_constraint(config: Config, models: Models, c: Constraint) -> list[Findi
 
 
 def _absent_violation(config: Config, models: Models, c: Constraint) -> list[Finding] | None:
-    if c.enforced_by.kind == "likec4_absent_relation" and resolvers.absent_relation_violated(
-        models, c.enforced_by.ref or ""
-    ):
-        return [_reg8(config, c)]
+    absent = c.enforced_by.kind in resolvers.ABSENT_KINDS
+    if absent and resolvers.absent_relation_violated(models, c.enforced_by.ref or ""):
+        return [_reg8(config, models, c)]
     return None
 
 
@@ -179,7 +176,7 @@ def _fixture_findings(config: Config, c: Constraint) -> list[Finding]:
                 config,
                 c,
                 f"fixture for {c.id} could not be validated: {outcome.error}",
-                "Make the fixture loadable: use Turtle, or declare 'fixture_class'.",
+                _load_remedy(outcome.error),
                 path,
             )
         ]
@@ -194,6 +191,15 @@ def _fixture_findings(config: Config, c: Constraint) -> list[Finding]:
             )
         ]
     return [] if _names_shape(outcome, c) else [_reg7(config, c, path)]
+
+
+def _load_remedy(error: str) -> str:
+    if "Unknown CURIE prefix" in error:
+        return (
+            "Give the fixture's identifier a CURIE, such as 'id: todo:t1' "
+            "(a bare 'id: t1' cannot be converted)."
+        )
+    return "Make the fixture loadable: use Turtle, or declare 'fixture_class'."
 
 
 def _names_shape(outcome: fixtures.Validation, c: Constraint) -> bool:
@@ -218,8 +224,64 @@ def _reg7(config: Config, c: Constraint, path: Path) -> Finding:
     )
 
 
+FIXTURE_SUFFIXES = (".ttl", ".yaml", ".yml", ".json")
+
+
+def _valid_fixtures(config: Config) -> list[Path]:
+    directory = config.path("shacl_valid")
+    if not directory.is_dir():
+        return []
+    return sorted(p for p in directory.rglob("*") if p.is_file() and p.suffix in FIXTURE_SUFFIXES)
+
+
+def _valid_class(constraints: list[Constraint]) -> str | None:
+    """The fixture class for YAML valid fixtures, when the registry declares exactly one."""
+    classes = {c.enforced_by.fixture_class for c in constraints if c.enforced_by.fixture_class}
+    return classes.pop() if len(classes) == 1 else None
+
+
+def _reg9(config: Config, path: Path, message: str, remedy: str) -> Finding:
+    return Finding(
+        id="REG-9",
+        severity=Severity.error,
+        file=config.rel(path),
+        subject=config.rel(path),
+        message=message,
+        remedy=remedy,
+    )
+
+
+def _valid_findings(config: Config, path: Path, fixture_class: str | None) -> list[Finding]:
+    outcome = fixtures.validate(config, path, fixture_class)
+    if outcome.error is not None:
+        return [
+            _reg9(
+                config,
+                path,
+                f"valid fixture {config.rel(path)} could not be validated: {outcome.error}",
+                _load_remedy(outcome.error),
+            )
+        ]
+    if outcome.conforms:
+        return []
+    accused = ", ".join(f"'{s}'" for s in sorted(outcome.shapes)) or "a shape"
+    return [
+        _reg9(
+            config,
+            path,
+            f"valid fixture {config.rel(path)} violates {accused}.",
+            "Correct the fixture so it conforms, or relax the shape it violates.",
+        )
+    ]
+
+
+def _valid_fixture_findings(config: Config, constraints: list[Constraint]) -> list[Finding]:
+    fixture_class = _valid_class(constraints)
+    return [f for p in _valid_fixtures(config) for f in _valid_findings(config, p, fixture_class)]
+
+
 def check(config: Config, models: Models, constraints: list[Constraint]) -> list[Finding]:
-    """REG-1..REG-7: the registry seam, checked in both directions (I14)."""
+    """REG-1..REG-9: the registry seam, checked in both directions (I14)."""
     findings = [
         *_registry_findings(config, models, constraints),
         *_decision_findings(config, constraints),
@@ -228,4 +290,4 @@ def check(config: Config, models: Models, constraints: list[Constraint]) -> list
     for c in constraints:
         if c.enforced_by.fixture:
             findings.extend(_fixture_findings(config, c))
-    return findings
+    return findings + _valid_fixture_findings(config, constraints)

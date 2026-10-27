@@ -119,6 +119,14 @@ class EnforcerKind(str, Enum):
     """
     A relation that must not exist in the model.
     """
+    relation = "relation"
+    """
+    A relation that must exist in the model, whatever notation drew it.
+    """
+    absent_relation = "absent_relation"
+    """
+    A relation that must not exist in the model, whatever notation drew it.
+    """
     likec4_element = "likec4_element"
     """
     An element that must exist in the model.
