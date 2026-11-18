@@ -127,8 +127,21 @@ def init(
         typer.echo(f"created {name}")
     for name in result.skipped:
         typer.secho(f"kept    {name} (already exists)", fg="yellow")
-    if "docs/architecture.md" in result.skipped:
-        typer.echo("\nAdd these markers to docs/architecture.md; 'check --fix' fills them:")
+    _show_regions(directory, result.written)
+
+
+def _kept_documents(directory: Path, written: list[str]) -> list[str]:
+    try:
+        documents = config_module.load(directory).documents
+    except config_module.ConfigError:
+        return []
+    return [d for d in documents if d not in written and (directory / d).is_file()]
+
+
+def _show_regions(directory: Path, written: list[str]) -> None:
+    """For each configured document init found and kept, the markers it would have written."""
+    for name in _kept_documents(directory, written):
+        typer.echo(f"\nAdd these markers to {name}; 'check --fix' fills them:")
         typer.echo("\n".join(scaffold.region_help()))
 
 
