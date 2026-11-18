@@ -184,22 +184,32 @@ def _link(crossing: Crossing, hunk: Hunk) -> str:
     return f"[{text}]({hunk.url})" if hunk.url else f"`{text}`"
 
 
-def _item(crossing: Crossing) -> list[str]:
+def _where(crossing: Crossing) -> str:
+    """The contract and the changed lines in it, as a heading for the relations it carries."""
     links = ", ".join(_link(crossing, h) for h in crossing.hunks or [])
-    where = links or f"`{crossing.file}` (deleted)"
-    contract = "" if crossing.contract == crossing.file else f" (contract `{crossing.contract}`)"
-    return [
-        f"- `{crossing.source} -> {crossing.target}` {crossing.title}{contract}: {where}",
-        TODO,
-    ]
+    named = "" if crossing.contract == crossing.file else f"`{crossing.contract}` in "
+    return f"{named}{links}" if links else f"{named}`{crossing.file}` (deleted)"
+
+
+def _grouped(found: list[Crossing]) -> dict[str, list[Crossing]]:
+    """The crossings under each changed contract, in the order first reached."""
+    groups: dict[str, list[Crossing]] = {}
+    for crossing in found:
+        groups.setdefault(_where(crossing), []).append(crossing)
+    return groups
+
+
+def _group(where: str, crossings: list[Crossing]) -> list[str]:
+    relations = [f"  - `{c.source} -> {c.target}` {c.title}" for c in crossings]
+    return [f"- {where}", TODO, *relations]
 
 
 def as_markdown(span: Range, found: list[Crossing]) -> str:
-    """The crossings as a section to put first in a pull request's description."""
+    """The crossings, grouped by contract, as a section to put first in a pull request."""
     if not found:
         return (f"{HEADING}\n\nNo relation's contract changed between `{span.base}` and "
                 f"`{span.head[:12]}`.")
-    items = [line for crossing in found for line in _item(crossing)]
+    items = [line for where, group in _grouped(found).items() for line in _group(where, group)]
     return "\n".join([HEADING, "", "### Changed", *items])
 
 
