@@ -187,6 +187,54 @@ classes:
         required: true
       kind:
         description: The relation's kind, when its producer declares one.
+      contract:
+        description: >-
+          The path or schema class where the relation's contract is written, or
+          'none' when it has no written contract.
+      contract_reason:
+        description: Why a relation whose contract is 'none' has none.
+
+  Crossing:
+    description: A relation whose contract a range of commits changed.
+    annotations:
+      owner: slarti.seams
+    attributes:
+      source:
+        description: The element the relation starts at.
+        required: true
+      target:
+        description: The element the relation ends at.
+        required: true
+      title:
+        description: What the relation is called.
+        required: true
+      contract:
+        description: The contract as the relation declares it.
+        required: true
+      file:
+        description: The changed file the contract resolves to, relative to the project root.
+        required: true
+      hunks:
+        description: The changed lines of that file, in file order.
+        range: Hunk
+        multivalued: true
+        inlined_as_list: true
+
+  Hunk:
+    description: A run of lines the range changed in one contract file.
+    annotations:
+      owner: slarti.seams
+    attributes:
+      start:
+        description: The first changed line, at the head of the range.
+        range: integer
+        required: true
+      end:
+        description: The last changed line, at the head of the range.
+        range: integer
+        required: true
+      url:
+        description: A permalink to the lines, pinned to the head commit, when the remote is known.
 
   Region:
     description: A generated region of the architecture document, between two markers.

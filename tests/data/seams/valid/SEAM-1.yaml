@@ -1,0 +1,11 @@
+# One relation names a schema class as its contract; the other has none, and says why.
+elements:
+  - {id: todo.api, kind: Service, name: API}
+  - {id: todo.db, kind: Database, name: Database}
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db, contract: Task}
+  - kind: Reads
+    source: todo.db
+    target: todo.api
+    contract: none
+    contract_reason: an in-process callback

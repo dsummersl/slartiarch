@@ -35,6 +35,7 @@ slartiarch check --json  # structured output for automation
 slartiarch check --fix   # regenerate diagrams and tables into your docs, then check
 slartiarch report        # every rule, shape, and check ID
 slartiarch report --json # fully detailed, for agents
+slartiarch seams --base origin/main  # relations whose contracts this branch changed, for a PR
 ```
 
 Run `slartiarch` with no arguments for a full reference. `slartiarch report --json` describes every
@@ -191,6 +192,35 @@ drawn = ["Person", "Container", "Relationship"]
 
 A schema can opt a kind in instead with `annotations: {drawn: true}`. See
 [docs/producers.md](docs/producers.md#elements-and-relations-that-must-be-drawn).
+
+### Contracts and `seams`
+
+Every relation says where its contract is written, so a diff can be mapped onto the
+boundaries it crosses. `contract` is a path relative to the project root (an
+OpenAPI file, a migration directory, an event definition) or the name of a project
+schema class; a relation with no written contract says `contract: none` and why:
+
+```yaml
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db, contract: db/migrations}
+  - kind: Calls
+    source: todo.web
+    target: todo.api
+    contract: none
+    contract_reason: an in-process call
+```
+
+A relation with neither is `SEAM-1`; a contract that resolves to nothing is
+`SEAM-2`. In LikeC4, write both as relation metadata
+(`metadata { contract 'openapi.yaml' }`).
+
+`slartiarch seams --base origin/main` diffs `origin/main...HEAD` and prints, as
+Markdown for a pull request's description, every relation whose contract the
+range changed, with permalinks to the changed lines pinned to `HEAD`. A class
+contract is crossed only by changes inside that class's block. `--json` gives the
+same content. It never classifies a change: fill in each `TODO` with whether it is
+additive, breaking or internal. An agent's `AGENTS.md` can say: "run
+`slartiarch seams --base origin/main` and put its output first in the PR body."
 
 ### The C4 profile
 

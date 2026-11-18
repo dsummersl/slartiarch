@@ -1,0 +1,6 @@
+# The contract is neither a path in the project nor a class of its schema.
+elements:
+  - {id: todo.api, kind: Service, name: API}
+  - {id: todo.db, kind: Database, name: Database}
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db, contract: openapi.yaml}

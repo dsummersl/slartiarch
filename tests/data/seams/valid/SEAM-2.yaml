@@ -1,0 +1,6 @@
+# The contract is a path inside the project.
+elements:
+  - {id: todo.api, kind: Service, name: API}
+  - {id: todo.db, kind: Database, name: Database}
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db, contract: schema/todo.yaml}

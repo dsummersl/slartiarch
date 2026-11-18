@@ -218,6 +218,8 @@ def _relation(raw: dict[str, Any]) -> ModelRelation:
         target=str(raw["target"]),
         title=str(title),
         kind=_optional(raw, "kind"),
+        contract=_optional(raw, "contract"),
+        contract_reason=_optional(raw, "contract_reason"),
     )
 
 

@@ -65,6 +65,8 @@ relations:
     source: todo.api      # element ids
     target: todo.db
     description: The API reads tasks from the database.
+    contract: Task        # a path in the project or a project schema class; or 'none'
+                          # with a 'contract_reason' saying why (SEAM-1, SEAM-2)
 ```
 
 A node or edge may also name its structural class in `kind`, with the slots that
@@ -132,6 +134,8 @@ target node depicts. Two looser matches spare a diagram from restating the model
 | `DRAWN-1`  | An element of a kind that must be drawn appears in no diagram (opt-in).   |
 | `DRAWN-2`  | A relation of a kind that must be drawn is depicted by no edge (opt-in).  |
 | `KIND-1`   | A node's `element_kinds` names no kind its element is, or descends from.  |
+| `SEAM-1`   | A relation names no `contract`, or says `none` with no `contract_reason`. |
+| `SEAM-2`   | A relation's `contract` is neither a project path nor a schema class.     |
 
 Node and edge findings point at the `location` the producer read, not at the
 instance file, and their remedies are written in the notation the construct came
@@ -173,7 +177,9 @@ instance file holds, one `Corpus` per `.c4` file:
 
 - each LikeC4 element becomes an `Element` with its `kind`, `name`, `description`,
   and `owns` read from its `owns` metadata;
-- each relationship becomes a `Relation`, kept with its source element;
+- each relationship becomes a `Relation`, kept with its source element, with
+  `contract` and `contract_reason` read from its metadata. A relationship without
+  them is not given a default: it is `SEAM-1`, as an instance would be;
 - each view becomes a `Diagram`. A node depicting an element is attached to it;
   a group is ignored. An edge that draws a declared relationship is attached by
   that relationship's kind or title; an edge LikeC4 derived from relationships

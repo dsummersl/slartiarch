@@ -151,7 +151,7 @@ class Finding(ConfiguredBaseModel):
 
     id: str = Field(default=..., description="""A stable check ID such as OWN-1; retired IDs are never reused.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'ModelElement']} })
     severity: Severity = Field(default=..., description="""Whether the finding fails the build.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding']} })
-    file: str = Field(default=..., description="""The file the finding is about.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding']} })
+    file: str = Field(default=..., description="""The file the finding is about.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Crossing']} })
     line: Optional[int] = Field(default=None, description="""The line in that file, when the source can be located.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'Region']} })
     subject: str = Field(default=..., description="""The entity the finding is about, in domain terms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding']} })
     message: str = Field(default=..., description="""What is wrong, phrased in domain terms rather than tool terms.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding']} })
@@ -218,7 +218,7 @@ class ModelElement(ConfiguredBaseModel):
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
     id: str = Field(default=..., description="""The fully qualified element identifier.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Constraint', 'ModelElement']} })
-    title: str = Field(default=..., description="""The element's display title.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement', 'ModelRelation']} })
+    title: str = Field(default=..., description="""The element's display title.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement', 'ModelRelation', 'Crossing']} })
     kind: str = Field(default=..., description="""The element's kind, as its producer declares it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'ModelElement', 'ModelRelation']} })
     owns: list[str] = Field(default=..., description="""The schema classes this element claims.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement']} })
 
@@ -230,10 +230,39 @@ class ModelRelation(ConfiguredBaseModel):
     linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.models'}},
          'from_schema': 'https://dsummersl.github.io/slarti'})
 
-    source: str = Field(default=..., description="""The element the relation starts at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation']} })
-    target: str = Field(default=..., description="""The element the relation ends at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation']} })
-    title: str = Field(default=..., description="""What the relation is called.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement', 'ModelRelation']} })
+    source: str = Field(default=..., description="""The element the relation starts at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation', 'Crossing']} })
+    target: str = Field(default=..., description="""The element the relation ends at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation', 'Crossing']} })
+    title: str = Field(default=..., description="""What the relation is called.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement', 'ModelRelation', 'Crossing']} })
     kind: Optional[str] = Field(default=None, description="""The relation's kind, when its producer declares one.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Enforcer', 'ModelElement', 'ModelRelation']} })
+    contract: Optional[str] = Field(default=None, description="""The path or schema class where the relation's contract is written, or 'none' when it has no written contract.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation', 'Crossing']} })
+    contract_reason: Optional[str] = Field(default=None, description="""Why a relation whose contract is 'none' has none.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation']} })
+
+
+class Crossing(ConfiguredBaseModel):
+    """
+    A relation whose contract a range of commits changed.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.seams'}},
+         'from_schema': 'https://dsummersl.github.io/slarti'})
+
+    source: str = Field(default=..., description="""The element the relation starts at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation', 'Crossing']} })
+    target: str = Field(default=..., description="""The element the relation ends at.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation', 'Crossing']} })
+    title: str = Field(default=..., description="""What the relation is called.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelElement', 'ModelRelation', 'Crossing']} })
+    contract: str = Field(default=..., description="""The contract as the relation declares it.""", json_schema_extra = { "linkml_meta": {'domain_of': ['ModelRelation', 'Crossing']} })
+    file: str = Field(default=..., description="""The changed file the contract resolves to, relative to the project root.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Finding', 'Crossing']} })
+    hunks: Optional[list[Hunk]] = Field(default=None, description="""The changed lines of that file, in file order.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Crossing']} })
+
+
+class Hunk(ConfiguredBaseModel):
+    """
+    A run of lines the range changed in one contract file.
+    """
+    linkml_meta: ClassVar[LinkMLMeta] = LinkMLMeta({'annotations': {'owner': {'tag': 'owner', 'value': 'slarti.seams'}},
+         'from_schema': 'https://dsummersl.github.io/slarti'})
+
+    start: int = Field(default=..., description="""The first changed line, at the head of the range.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Hunk']} })
+    end: int = Field(default=..., description="""The last changed line, at the head of the range.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Hunk']} })
+    url: Optional[str] = Field(default=None, description="""A permalink to the lines, pinned to the head commit, when the remote is known.""", json_schema_extra = { "linkml_meta": {'domain_of': ['Hunk']} })
 
 
 class Region(ConfiguredBaseModel):
@@ -289,6 +318,8 @@ Constraint.model_rebuild()
 Enforcer.model_rebuild()
 ModelElement.model_rebuild()
 ModelRelation.model_rebuild()
+Crossing.model_rebuild()
+Hunk.model_rebuild()
 Region.model_rebuild()
 Probe.model_rebuild()
 ProjectPaths.model_rebuild()

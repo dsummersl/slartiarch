@@ -113,6 +113,15 @@ A join between two models that neither model can see: architecture ↔ diagrams,
 architecture ↔ LinkML (ownership), document ↔ registry, document ↔ models. Seams are the only thing `slarti` itself
 enforces.
 
+### 2.7 Contract
+
+Where the agreement a relation crosses is written down: a file or directory in the
+project (an API definition, a migration directory), or a class of the project
+schema. Every relation names its contract, or says `contract: none` and why
+(`SEAM-1`, `SEAM-2`). `slartiarch seams --base <ref>` maps a diff onto the relations
+whose contracts it changed, as a section for a pull request's description; whether a
+change is additive or breaking is left to its author.
+
 ## 3. Constraints
 
 - Python 3.11+, distributed as a `uv`-installable CLI.
@@ -147,6 +156,7 @@ C4Context
   System_Ext(linkml, "LinkML", "Validates the schema and generates projections.")
   System_Ext(pyshacl, "pyshacl", "Validates negative fixtures against the shapes.")
   System_Ext(likec4, "LikeC4", "Optional: a structure source for projects that keep one.")
+  System_Ext(git, "git", "Describes the range of commits a seam report covers.")
   Rel(architect, slarti, "runs check")
   Rel(agent, slarti, "runs check --json and applies remedies")
   Rel(architect, sources, "edits")
@@ -155,6 +165,7 @@ C4Context
   Rel(slarti, linkml, "SchemaView, gen-erdiagram")
   Rel(slarti, pyshacl, "validates one negative fixture per rule")
   Rel(slarti, likec4, "export json, codegen mermaid")
+  Rel(slarti, git, "diffs the range")
   UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")
 ```
 
@@ -175,6 +186,7 @@ C4Container
     Container(env, "Environment gate")
     Container(settings, "Config")
     Container(scaffold, "Scaffolder")
+    Container(seams, "Seam report")
     Container(runner, "Runner")
     Container(docsgen, "Document generator")
     Container(checks, "Checks")
@@ -188,6 +200,7 @@ C4Container
   System_Ext(linkml, "LinkML")
   System_Ext(pyshacl, "pyshacl")
   System_Ext(likec4, "LikeC4", "optional")
+  System_Ext(git, "git")
   Rel(architect, cli, "runs check")
   Rel(agent, cli, "runs check --json and applies remedies")
   Rel(cli, env, "gates on tool versions")
@@ -196,6 +209,9 @@ C4Container
   Rel(cli, docsgen, "regenerates the document")
   Rel(cli, settings, "resolves paths")
   Rel(cli, vocabulary, "reports the version")
+  Rel(cli, seams, "reports the contracts a diff changes")
+  Rel(seams, models, "resolves the relations' contracts")
+  Rel(seams, git, "diffs the range")
   Rel(runner, checks, "collects findings")
   Rel(runner, registry, "loads the constraints")
   Rel(checks, models, "reads both models")
@@ -270,8 +286,10 @@ a dangling pointer and an unclaimed target are different failures.
 | Entity | Owner | Owner title |
 | --- | --- | --- |
 | Constraint | `slarti.registry` | Registry |
+| Crossing | `slarti.seams` | Seam report |
 | Enforcer | `slarti.registry` | Registry |
 | Finding | `slarti.findings` | Findings |
+| Hunk | `slarti.seams` | Seam report |
 | ModelElement | `slarti.models` | Models |
 | ModelRelation | `slarti.models` | Models |
 | Probe | `slarti.env` | Environment gate |
@@ -298,6 +316,13 @@ Constraint {
     string reason  
     string statement  
 }
+Crossing {
+    string contract  
+    string file  
+    string source  
+    string target  
+    string title  
+}
 Enforcer {
     string fixture  
     string fixture_class  
@@ -313,6 +338,11 @@ Finding {
     Severity severity  
     string subject  
 }
+Hunk {
+    integer end  
+    integer start  
+    string url  
+}
 ModelElement {
     string id  
     string kind  
@@ -320,6 +350,8 @@ ModelElement {
     string title  
 }
 ModelRelation {
+    string contract  
+    string contract_reason  
     string kind  
     string source  
     string target  
@@ -358,6 +390,7 @@ Summary {
 }
 
 Constraint ||--|| Enforcer : "enforced_by"
+Crossing ||--}o Hunk : "hunks"
 Report ||--|| Summary : "summary"
 Report ||--}o Finding : "findings"
 ```

@@ -200,6 +200,18 @@ CHECKS: dict[str, str] = {
         "not draw.\n"
         "Remedy: write attach, ignore or alias with names the diagram draws."
     ),
+    "SEAM-1": (
+        "A relation does not say where its contract is written: it has no 'contract', "
+        "or its contract is 'none' with no 'contract_reason'.\n"
+        "Remedy: give the relation 'contract: <path or schema class>', or 'contract: none' "
+        "with a 'contract_reason'; in LikeC4, write them as relation metadata."
+    ),
+    "SEAM-2": (
+        "A relation's contract is neither a path inside the project nor a class of the "
+        "project schema.\n"
+        "Remedy: point 'contract' at an existing file or directory relative to the project "
+        "root, or at a project schema class."
+    ),
     "ENV-1": (
         "A delegated tool is missing or outside its supported version range.\n"
         "Remedy: run 'slarti doctor' and install a version inside the range."
