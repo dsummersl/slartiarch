@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import tempfile
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
 from rdflib import Graph
+from rdflib.compare import to_isomorphic
 from rdflib.namespace import RDF, SH
-from rdflib.term import Literal, Node, URIRef
+from rdflib.term import BNode, Literal, Node, URIRef
 
 from slarti import proc, vocabulary
 from slarti.config import Config
@@ -65,6 +67,48 @@ def _to_turtle(config: Config, fixture: Path, fixture_class: str | None, tmp: Pa
     return out
 
 
+def _closure(graph: Graph, node: Node) -> Graph:
+    """The triples describing a node, following blank nodes."""
+    out = Graph()
+    todo, seen = [node], set()
+    while todo:
+        current = todo.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        for triple in graph.triples((current, None, None)):
+            out.add(triple)
+            if isinstance(triple[2], BNode):
+                todo.append(triple[2])
+    return out
+
+
+def _same_shape(shapes: Graph, report: Graph, shape: Node, source: Node) -> bool:
+    return bool(to_isomorphic(_closure(shapes, shape)) == to_isomorphic(_closure(report, source)))
+
+
+def _holders(shapes: Graph, shape: Node) -> Iterator[Node]:
+    for predicate in (SH.property, SH.sparql):
+        yield from shapes.subjects(predicate, shape)
+
+
+def _named_owners(shapes: Graph, report: Graph, source: Node) -> set[str]:
+    """The named node shapes holding the shape a report result cites as its source."""
+    if isinstance(source, URIRef):
+        return {_name(shapes, source)}
+    same = [s for s in set(shapes.subjects(SH.path)) if _same_shape(shapes, report, s, source)]
+    return {_name(shapes, h) for h in _named_holders(shapes, same)}
+
+
+def _named_holders(shapes: Graph, found: list[Node]) -> list[URIRef]:
+    holders = (holder for shape in found for holder in _holders(shapes, shape))
+    return [holder for holder in holders if isinstance(holder, URIRef)]
+
+
+def _name(shapes: Graph, shape: URIRef) -> str:
+    return shapes.namespace_manager.normalizeUri(shape).strip("<>")
+
+
 def _has_path(shapes: Graph, shape: Node, path: Node) -> bool:
     own = any(shapes.triples((shape, SH.path, path)))
     return own or any(
@@ -76,6 +120,10 @@ def _implicated(shapes: Graph, data: Graph, report: Graph) -> frozenset[str]:
     """The named node shapes a violation report actually accuses."""
     names: set[str] = set()
     for result in report.objects(predicate=SH.result):
+        source = report.value(result, SH.sourceShape)
+        if source is not None:
+            names |= _named_owners(shapes, report, source)
+            continue
         focus = report.value(result, SH.focusNode)
         path = report.value(result, SH.resultPath)
         for kind in data.objects(focus, RDF.type):
@@ -86,10 +134,8 @@ def _implicated(shapes: Graph, data: Graph, report: Graph) -> frozenset[str]:
 def _shapes_targeting(shapes: Graph, kind: Node, path: Node | None) -> set[str]:
     found = set()
     for shape in shapes.subjects(SH.targetClass, kind):
-        if not isinstance(shape, URIRef):
-            continue
-        if path is None or _has_path(shapes, shape, path):
-            found.add(shapes.namespace_manager.normalizeUri(shape).strip("<>"))
+        if isinstance(shape, URIRef) and (path is None or _has_path(shapes, shape, path)):
+            found.add(_name(shapes, shape))
     return found
 
 
