@@ -279,6 +279,13 @@ translated into `Element`s, as any other producer's instances do.
 These read vocabulary instances only, never diagram syntax. Identity resolves on
 ids plus declared aliases; `slarti` never guesses between candidates.
 
+**Contract slarti (`SEAM-*`)**
+
+| ID | Finding |
+|----|---------|
+| SEAM-1 | A `Relation` has no `contract`, or `contract: none` without a `contract_reason` |
+| SEAM-2 | A `Relation`'s `contract` is neither a path in the project nor a project schema class |
+
 **Registry slarti (`REG-*`)**
 
 | ID | Finding |
@@ -312,6 +319,7 @@ ids plus declared aliases; `slarti` never guesses between candidates.
 | `slarti check --json` | Same, as structured findings on stdout. Human output suppressed. |
 | `slarti check --fix` | Regenerate diagrams and registry tables into the generated regions of the documents, then check. The only command that writes. |
 | `slarti report` | Every seam in report form: enforced rules, unenforced rules, orphaned shapes, and the check catalogue. The headline command. |
+| `slarti seams --base <ref>` | The relations whose contracts `<ref>...HEAD` changed, as Markdown for a PR body, with permalinks pinned to `HEAD`; `--json` for the same content. Prints only. |
 | `slarti report --json` | The same report, fully detailed: resolved enforcers, shape references, ownership, elements, and every check with its remedy. Primarily for agents. |
 
 **Exit codes:** `0` clean · `1` findings · `2` environment or usage error.

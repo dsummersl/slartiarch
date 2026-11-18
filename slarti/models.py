@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -35,6 +36,61 @@ def shape_line(path: Path, curie: str) -> int | None:
         if text.startswith((curie, local)) or text.startswith(f":{local}"):
             return number
     return None
+
+
+NO_CONTRACT = "none"
+CLASSES_KEY = "classes:"
+
+
+@dataclass(frozen=True)
+class Contract:
+    """Where a relation's contract is written: a file, a directory, or one class of a schema."""
+
+    file: str
+    directory: bool = False
+    lines: tuple[int, int] | None = None
+
+    def covers(self, path: str) -> bool:
+        """Whether a file, relative to the project root, is part of the contract."""
+        if self.directory:
+            return path.startswith(self.file.rstrip("/") + "/")
+        return path == self.file
+
+
+def _indent(text: str) -> int:
+    return len(text) - len(text.lstrip())
+
+
+def _significant(text: str) -> bool:
+    stripped = text.strip()
+    return bool(stripped) and not stripped.startswith("#")
+
+
+def _first(lines: list[str], begin: int, wanted: Callable[[str], bool]) -> int | None:
+    """The index of the first line from ``begin`` on that is wanted."""
+    return next((n for n in range(begin, len(lines)) if wanted(lines[n])), None)
+
+
+def _block_start(lines: list[str], name: str) -> int | None:
+    """The index of a class's key line under the first top-level ``classes:``."""
+    heading = _first(lines, 0, lambda text: text.rstrip() == CLASSES_KEY)
+    key = f"{name}:"
+    return None if heading is None else _first(lines, heading + 1, lambda t: t.strip() == key)
+
+
+def _block_end(lines: list[str], start: int) -> int:
+    """The index just past the last significant line of the block opened at ``start``."""
+    depth = _indent(lines[start])
+    end = _first(lines, start + 1, lambda t: _significant(t) and _indent(t) <= depth)
+    body = [n for n in range(start, end or len(lines)) if _significant(lines[n])]
+    return body[-1] + 1
+
+
+def class_span(path: Path, name: str) -> tuple[int, int] | None:
+    """The lines a class's block spans under the top-level ``classes:`` of a schema file."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    start = _block_start(lines, name)
+    return None if start is None else (start + 1, _block_end(lines, start))
 
 
 @dataclass
@@ -113,3 +169,22 @@ class Models:
         cls = view.get_class(name)
         annotation = cls.annotations.get(key) if cls is not None else None
         return None if annotation is None else str(annotation.value)
+
+    def contract(self, ref: str) -> Contract | None:
+        """Where a relation's contract resolves: a path inside the root, else a schema class."""
+        return self._contract_path(ref) or self._contract_class(ref)
+
+    def _contract_path(self, ref: str) -> Contract | None:
+        root = self.config.root.resolve()
+        candidate = (root / ref).resolve()
+        if not candidate.exists() or not candidate.is_relative_to(root):
+            return None
+        return Contract(file=self.config.rel(candidate), directory=candidate.is_dir())
+
+    def _contract_class(self, ref: str) -> Contract | None:
+        view = self.schema
+        cls = view.get_class(ref) if view is not None else None
+        if cls is None or cls.from_schema not in self._schema_id_map:
+            return None
+        file = self._schema_id_map[cls.from_schema]
+        return Contract(file=file, lines=class_span(self.config.root / file, ref))

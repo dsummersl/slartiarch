@@ -68,10 +68,20 @@ def _mapping(payload: Instance, key: str) -> dict[str, Instance]:
     return raw
 
 
-def _owns(raw: Instance) -> list[str]:
+def _metadata(raw: Instance, key: str) -> str:
     metadata = raw.get("metadata") or {}
-    owns = str(metadata.get("owns", "")) if isinstance(metadata, dict) else ""
+    value = metadata.get(key) if isinstance(metadata, dict) else None
+    return "" if value is None else str(value).strip()
+
+
+def _owns(raw: Instance) -> list[str]:
+    owns = _metadata(raw, "owns")
     return sorted(part.strip() for part in owns.split(",") if part.strip())
+
+
+# Relation metadata carried through to the vocabulary as written; an absent key is
+# left absent, so the seam checks report it rather than a default standing in.
+RELATION_METADATA = ("contract", "contract_reason")
 
 
 def _text(raw: Instance, key: str) -> str:
@@ -98,6 +108,7 @@ def _relation(raw: Instance) -> Instance:
         "target": str(raw["target"]["model"]),
         "description": _text(raw, "title"),
     }
+    relation |= {key: _metadata(raw, key) for key in RELATION_METADATA if _metadata(raw, key)}
     return relation | ({"kind": str(raw["kind"])} if raw.get("kind") else {})
 
 

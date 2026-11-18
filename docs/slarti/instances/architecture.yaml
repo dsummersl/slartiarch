@@ -90,6 +90,13 @@ elements:
     name: Vocabulary
     aliases: [vocabulary]
     description: "The LinkML data contract adapters produce: diagrams, nodes, edges, elements, relations."
+  - id: slarti.seams
+    kind: Container
+    system: slarti
+    name: Seam report
+    aliases: [seams]
+    description: "slarti seams: the relations whose contracts a range of commits changed."
+    owns: [Crossing, Hunk]
   - id: slarti.scaffold
     kind: Container
     system: slarti
@@ -112,6 +119,11 @@ elements:
     external: true
     name: pyshacl
     description: Validates negative fixtures against the hand-written shapes.
+  - id: git
+    kind: SoftwareSystem
+    external: true
+    name: git
+    description: Describes the range of commits a seam report covers. Invoked as a subprocess.
   - id: sources
     kind: SoftwareSystem
     external: true
@@ -119,40 +131,185 @@ elements:
     description: Vocabulary instances, LinkML schemas, SHACL shapes, the constraint registry and the architecture document.
 
 relations:
-  - {kind: Relationship, source: architect, target: slarti.cli, description: runs check}
-  - {kind: Relationship, source: agent, target: slarti.cli, description: runs check --json and applies remedies}
-  - {kind: Relationship, source: agent, target: sources, description: edits}
-  - {kind: Relationship, source: architect, target: sources, description: edits}
+  - kind: Relationship
+    source: architect
+    target: slarti.cli
+    description: runs check
+    contract: slarti/cli.py
+  - kind: Relationship
+    source: agent
+    target: slarti.cli
+    description: runs check --json and applies remedies
+    contract: Finding
+  - kind: Relationship
+    source: agent
+    target: sources
+    description: edits
+    contract: slarti/vocabulary/vocabulary.yaml
+  - kind: Relationship
+    source: architect
+    target: sources
+    description: edits
+    contract: slarti/vocabulary/vocabulary.yaml
 
-  - {kind: Relationship, source: slarti.cli, target: slarti.env, description: gates on tool versions}
-  - {kind: Relationship, source: slarti.cli, target: slarti.runner, description: runs the checks}
-  - {kind: Relationship, source: slarti.cli, target: slarti.scaffold, description: scaffolds a new project}
-  - {kind: Relationship, source: slarti.cli, target: slarti.docsgen, description: regenerates the document}
-  - {kind: Relationship, source: slarti.cli, target: slarti.settings, description: resolves paths}
-  - {kind: Relationship, source: slarti.cli, target: slarti.vocabulary, description: reports the version}
+  - kind: Relationship
+    source: slarti.cli
+    target: slarti.env
+    description: gates on tool versions
+    contract: Probe
+  - kind: Relationship
+    source: slarti.cli
+    target: slarti.runner
+    description: runs the checks
+    contract: none
+    contract_reason: "an in-process call; what comes back is the findings, whose contract is on checks -> findings"
+  - kind: Relationship
+    source: slarti.cli
+    target: slarti.scaffold
+    description: scaffolds a new project
+    contract: none
+    contract_reason: "an in-process call that takes only the project root"
+  - kind: Relationship
+    source: slarti.cli
+    target: slarti.docsgen
+    description: regenerates the document
+    contract: Region
+  - kind: Relationship
+    source: slarti.cli
+    target: slarti.settings
+    description: resolves paths
+    contract: slarti/config.py
+  - kind: Relationship
+    source: slarti.cli
+    target: slarti.vocabulary
+    description: reports the version
+    contract: slarti/vocabulary/vocabulary.yaml
 
-  - {kind: Relationship, source: slarti.runner, target: slarti.checks, description: collects findings}
-  - {kind: Relationship, source: slarti.runner, target: slarti.registry, description: loads the constraints}
-  - {kind: Relationship, source: slarti.checks, target: slarti.models, description: reads both models}
-  - {kind: Relationship, source: slarti.checks, target: slarti.findings, description: emits findings}
-  - {kind: Relationship, source: slarti.checks, target: pyshacl, description: validates one negative fixture per rule}
+  - kind: Relationship
+    source: slarti.cli
+    target: slarti.seams
+    description: reports the contracts a diff changes
+    contract: Crossing
+  - kind: Relationship
+    source: slarti.seams
+    target: slarti.models
+    description: resolves the relations' contracts
+    contract: slarti/models.py
+  - kind: Relationship
+    source: slarti.seams
+    target: git
+    description: diffs the range
+    contract: none
+    contract_reason: git's own diff output, read in its unified format
 
-  - {kind: Relationship, source: slarti.docsgen, target: slarti.models, description: reads the model}
-  - {kind: Relationship, source: slarti.docsgen, target: slarti.registry, description: reads the rules}
-  - {kind: Relationship, source: slarti.docsgen, target: slarti.vocabulary, description: resolves the vocabulary import}
-  - {kind: Relationship, source: slarti.docsgen, target: likec4, description: delegates diagram generation}
-  - {kind: Relationship, source: slarti.docsgen, target: sources, description: writes generated regions only}
+  - kind: Relationship
+    source: slarti.runner
+    target: slarti.checks
+    description: collects findings
+    contract: Finding
+  - kind: Relationship
+    source: slarti.runner
+    target: slarti.registry
+    description: loads the constraints
+    contract: Constraint
+  - kind: Relationship
+    source: slarti.checks
+    target: slarti.models
+    description: reads both models
+    contract: slarti/models.py
+  - kind: Relationship
+    source: slarti.checks
+    target: slarti.findings
+    description: emits findings
+    contract: Finding
+  - kind: Relationship
+    source: slarti.checks
+    target: pyshacl
+    description: validates one negative fixture per rule
+    contract: none
+    contract_reason: "pyshacl's own command line, version-gated by the environment"
 
-  - {kind: Relationship, source: slarti.models, target: slarti.vocabulary, description: resolves the vocabulary import}
-  - {kind: Relationship, source: slarti.models, target: slarti.adapters, description: reads instances from}
-  - {kind: Relationship, source: slarti.models, target: linkml, description: SchemaView}
-  - {kind: Relationship, source: slarti.models, target: sources, description: reads}
+  - kind: Relationship
+    source: slarti.docsgen
+    target: slarti.models
+    description: reads the model
+    contract: slarti/models.py
+  - kind: Relationship
+    source: slarti.docsgen
+    target: slarti.registry
+    description: reads the rules
+    contract: Constraint
+  - kind: Relationship
+    source: slarti.docsgen
+    target: slarti.vocabulary
+    description: resolves the vocabulary import
+    contract: slarti/vocabulary/vocabulary.yaml
+  - kind: Relationship
+    source: slarti.docsgen
+    target: likec4
+    description: delegates diagram generation
+    contract: none
+    contract_reason: "LikeC4's own codegen command, version-gated by the environment gate"
+  - kind: Relationship
+    source: slarti.docsgen
+    target: sources
+    description: writes generated regions only
+    contract: Region
 
-  - {kind: Relationship, source: slarti.adapters, target: likec4, description: export json}
-  - {kind: Relationship, source: slarti.adapters, target: sources, description: parses Mermaid diagrams in}
-  - {kind: Relationship, source: slarti.adapters, target: slarti.vocabulary, description: emits instances of}
+  - kind: Relationship
+    source: slarti.models
+    target: slarti.vocabulary
+    description: resolves the vocabulary import
+    contract: slarti/vocabulary/vocabulary.yaml
+  - kind: Relationship
+    source: slarti.models
+    target: slarti.adapters
+    description: reads instances from
+    contract: slarti/vocabulary/vocabulary.yaml
+  - kind: Relationship
+    source: slarti.models
+    target: linkml
+    description: SchemaView
+    contract: none
+    contract_reason: "LinkML's SchemaView API, version-gated by the environment gate"
+  - kind: Relationship
+    source: slarti.models
+    target: sources
+    description: reads
+    contract: slarti/vocabulary/vocabulary.yaml
 
-  - {kind: Relationship, source: slarti.env, target: likec4, description: probes the version}
-  - {kind: Relationship, source: slarti.env, target: linkml, description: probes the version}
+  - kind: Relationship
+    source: slarti.adapters
+    target: likec4
+    description: export json
+    contract: none
+    contract_reason: "LikeC4's own export json, version-gated by the environment gate"
+  - kind: Relationship
+    source: slarti.adapters
+    target: sources
+    description: parses Mermaid diagrams in
+    contract: docs/mermaid.md
+  - kind: Relationship
+    source: slarti.adapters
+    target: slarti.vocabulary
+    description: emits instances of
+    contract: slarti/vocabulary/vocabulary.yaml
 
-  - {kind: Relationship, source: slarti.registry, target: sources, description: reads}
+  - kind: Relationship
+    source: slarti.env
+    target: likec4
+    description: probes the version
+    contract: none
+    contract_reason: "a version probe; only the reported version crosses"
+  - kind: Relationship
+    source: slarti.env
+    target: linkml
+    description: probes the version
+    contract: none
+    contract_reason: "a version probe; only the reported version crosses"
+
+  - kind: Relationship
+    source: slarti.registry
+    target: sources
+    description: reads
+    contract: Constraint
