@@ -59,8 +59,9 @@ docs/
 ### Generated regions
 
 `check --fix` fills the regions a document declares between
-`<!-- slarti:begin <name> -->` and `<!-- slarti:end <name> -->`. `init` keeps an
-existing `docs/architecture.md` and prints these markers for you to add:
+`<!-- slarti:begin <name> -->` and `<!-- slarti:end <name> -->`. The documents are
+those named by `documents` in `slarti.toml` (default `docs/architecture.md`). `init`
+keeps a document that already exists and prints these markers for you to add:
 
 | Region | Generates |
 | --- | --- |
