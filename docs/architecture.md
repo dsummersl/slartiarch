@@ -118,7 +118,7 @@ enforces.
 Where the agreement a relation crosses is written down: a file or directory in the
 project (an API definition, a migration directory), or a class of the project
 schema. Every relation names its contract, or says `contract: none` and why
-(`SEAM-1`, `SEAM-2`). `slartiarch seams --base <ref>` maps a diff onto the relations
+(`SEAM-1`, `SEAM-2`). `slartiarch report --base <ref>` maps a diff onto the relations
 whose contracts it changed, as a section for a pull request's description; whether a
 change is additive or breaking is left to its author.
 

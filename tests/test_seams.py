@@ -229,28 +229,48 @@ def _commit(root: Path, message: str) -> None:
     git(root, "-c", "user.name=t", "-c", "user.email=t@example.org", "commit", "-qam", message)
 
 
-def test_seams_command_lists_a_changed_contract(repository: Path) -> None:
+def test_report_base_lists_a_changed_contract(repository: Path) -> None:
     schema = repository / "schema/todo.yaml"
     schema.write_text(schema.read_text().replace("What to do.", "What there is to do."))
     _commit(repository, "reword")
     head = git(repository, "rev-parse", "HEAD").strip()
-    result = CliRunner().invoke(app, ["seams", "--base", "HEAD~1"])
+    result = CliRunner().invoke(app, ["report", "--base", "HEAD~1"])
     assert result.exit_code == 0, result.stdout
     assert "`todo.api -> todo.db`" in result.stdout
     assert f"https://github.com/octo/todo/blob/{head}/schema/todo.yaml#L24" in result.stdout
-    payload = json.loads(CliRunner().invoke(app, ["seams", "--base", "HEAD~1", "--json"]).stdout)
+    payload = json.loads(CliRunner().invoke(app, ["report", "--base", "HEAD~1", "--json"]).stdout)
     assert payload["crossings"][0]["hunks"][0]["start"] == 24
 
 
-def test_seams_command_lists_nothing_when_no_contract_changed(repository: Path) -> None:
+def test_report_base_lists_nothing_when_no_contract_changed(repository: Path) -> None:
     (repository / "notes.md").write_text("unrelated\n")
     git(repository, "add", "notes.md")
     _commit(repository, "notes")
-    result = CliRunner().invoke(app, ["seams", "--base", "HEAD~1"])
+    result = CliRunner().invoke(app, ["report", "--base", "HEAD~1"])
     assert result.exit_code == 0
     assert "No relation's contract changed" in result.stdout
 
 
-def test_seams_command_reports_a_bad_base(repository: Path) -> None:
-    result = CliRunner().invoke(app, ["seams", "--base", "no-such-ref"])
+def test_report_base_reports_a_bad_base(repository: Path) -> None:
+    result = CliRunner().invoke(app, ["report", "--base", "no-such-ref"])
     assert result.exit_code == 2
+
+
+def test_report_without_base_still_needs_the_registry(repository: Path) -> None:
+    result = CliRunner().invoke(app, ["report"])
+    assert "Contract boundaries" not in result.stdout
+    assert result.exit_code == 2
+
+
+def test_report_remote_url_overrides_origin(repository: Path) -> None:
+    schema = repository / "schema/todo.yaml"
+    schema.write_text(schema.read_text().replace("What to do.", "What there is to do."))
+    _commit(repository, "reword")
+    args = ["report", "--base", "HEAD~1", "--remote-url", "https://example.org/x/y"]
+    assert "https://example.org/x/y/blob/" in CliRunner().invoke(app, args).stdout
+
+
+def test_seams_is_no_longer_a_command(repository: Path) -> None:
+    result = CliRunner().invoke(app, ["seams", "--base", "HEAD~1"])
+    assert result.exit_code == 2
+    assert "No such command" in result.output
