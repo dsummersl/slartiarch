@@ -101,3 +101,65 @@ def test_a_valid_fixture_that_violates_a_shape_is_reg9(config) -> None:
     assert [f.id for f in findings] == ["REG-9"]
     assert findings[0].file.endswith("bad.ttl")
     assert "example:TaskHasList" in findings[0].message
+
+
+SEQUENCE_SHAPES = """@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix example: <https://example.org/example/> .
+
+example:SubtasksAreOneLevelDeep
+  a sh:NodeShape ;
+  sh:targetClass example:Task ;
+  sh:property [ sh:path ( example:parent example:parent ) ; sh:maxCount 0 ] .
+"""
+
+DEEP = """@prefix example: <https://example.org/example/> .
+@prefix d: <https://example.org/example/data/> .
+
+d:t1 a example:Task .
+d:t2 a example:Task ; example:parent d:t1 .
+d:t3 a example:Task ; example:parent d:t2 .
+"""
+
+SPARQL_SHAPES = """@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix example: <https://example.org/example/> .
+
+example:NoSelfParent
+  a sh:NodeShape ;
+  sh:targetClass example:Task ;
+  sh:prefixes example: ;
+  sh:sparql [
+    sh:select '''SELECT $this WHERE { $this <https://example.org/example/parent> $this }'''
+  ] .
+
+example:NoOrphans
+  a sh:NodeShape ;
+  sh:targetClass example:Task ;
+  sh:sparql [
+    sh:select '''SELECT $this
+      WHERE { FILTER NOT EXISTS { $this <https://example.org/example/list> ?l } }'''
+  ] .
+"""
+
+SELF_PARENT = """@prefix example: <https://example.org/example/> .
+@prefix d: <https://example.org/example/data/> .
+
+d:t1 a example:Task ; example:list "inbox" ; example:parent d:t1 .
+"""
+
+
+@needs_pyshacl
+def test_a_sequence_path_shape_is_named_by_its_violation(config) -> None:
+    (config.path("shacl") / "invariants.ttl").write_text(SEQUENCE_SHAPES, encoding="utf-8")
+    path = config.path("shacl_invalid") / "D5.ttl"
+    path.write_text(DEEP, encoding="utf-8")
+    outcome = fixtures.validate(config, path)
+    assert outcome.shapes == {"example:SubtasksAreOneLevelDeep"}
+
+
+@needs_pyshacl
+def test_a_sparql_violation_names_only_its_own_shape(config) -> None:
+    (config.path("shacl") / "invariants.ttl").write_text(SPARQL_SHAPES, encoding="utf-8")
+    path = config.path("shacl_invalid") / "D6.ttl"
+    path.write_text(SELF_PARENT, encoding="utf-8")
+    outcome = fixtures.validate(config, path)
+    assert outcome.shapes == {"example:NoSelfParent"}
