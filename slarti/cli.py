@@ -6,11 +6,12 @@ from pathlib import Path
 
 import typer
 
-from slarti import __version__, docs, env, report, runner, scaffold, vocabulary
+from slarti import __version__, docs, env, report, runner, scaffold, seams, vocabulary
 from slarti import config as config_module
 from slarti.adapters.likec4 import AdapterError
 from slarti.domain import Probe
 from slarti.findings import Report
+from slarti.models import Models
 from slarti.registry import RegistryError
 
 app = typer.Typer(
@@ -28,6 +29,7 @@ app = typer.Typer(
         "  • Mermaid diagrams  — sequence, ER and C4 diagrams read in Python (MMD-1..MMD-4)\n"
         "  • Diagrams ↔ elements — attachment, identity, dangling, drawn, kind\n"
         "    (ATTACH-*, IDENT-*, DANGLE-*, DRAWN-*, KIND-1)\n"
+        "  • Relations ↔ contracts — where each relation's contract is written (SEAM-1, SEAM-2)\n"
         "Everything else — parsing, validation, rendering — is delegated.\n"
         "\n"
         "Project layout (`slarti init` scaffolds this):\n"
@@ -51,6 +53,7 @@ app = typer.Typer(
         "  doctor        resolve paths and probe tool versions\n"
         "  check         validate model sources against all rules (--fix regenerates regions)\n"
         "  report        every rule, shape, class, and check ID with remedy\n"
+        "  seams         the relations whose contracts a diff changes, for a PR description\n"
         "\n"
         "Typical workflow: init → doctor → check --fix → check, then report for details.\n"
         "Config: slarti.toml (preferred) or tool.slartiarch in pyproject.toml.\n"
@@ -190,8 +193,8 @@ def check(
     fix: bool = typer.Option(False, "--fix", help="Regenerate stale document regions first."),
 ) -> None:
     """Validate model sources against all rules. Use --json.
-    IDs: INP-*, MMD-*, OWN-*, ATTACH-*, IDENT-*, DANGLE-*, DRAWN-*, KIND-*, REG-*,
-    DOC-*, ENV-*.
+    IDs: INP-*, MMD-*, OWN-*, ATTACH-*, IDENT-*, DANGLE-*, DRAWN-*, KIND-*, SEAM-*,
+    REG-*, DOC-*, ENV-*.
 
     Documents use HTML-comment markers to delimit generated regions:
       <!-- slarti:begin <name> -->
@@ -241,6 +244,29 @@ def report_command(
     result = report.build(ctx.models, ctx.constraints)
     typer.echo(result.as_json() if json_output else result.as_text())
     raise typer.Exit(EXIT_FINDINGS if result.orphaned else EXIT_CLEAN)
+
+
+@app.command(name="seams")
+def seams_command(
+    base: str = typer.Option("origin/main", "--base", help="Diff <base>...HEAD."),
+    json_output: bool = typer.Option(False, "--json", help="The same crossings as JSON."),
+    remote: str | None = typer.Option(
+        None, "--remote-url", help="Web URL of the repository for permalinks; default: origin."
+    ),
+) -> None:
+    """List the relations whose contracts <base>...HEAD changes, as Markdown for a PR.
+    Each links the changed lines, pinned to HEAD. Whether a change is additive or
+    breaking is left to the author: fill in each TODO."""
+    cfg = _load()
+    _gate(cfg)
+    models = Models(config=cfg)
+    try:
+        span, changed = seams.describe(models, base, remote)
+        found = seams.crossings(models, span, changed)
+    except (seams.SeamsError, AdapterError) as exc:
+        typer.secho(str(exc), fg="red", err=True)
+        raise typer.Exit(EXIT_ENVIRONMENT) from exc
+    typer.echo(seams.as_json(span, found) if json_output else seams.as_markdown(span, found))
 
 
 @app.callback(invoke_without_command=True)

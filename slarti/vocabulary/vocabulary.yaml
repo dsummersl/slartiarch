@@ -6,7 +6,7 @@ description: >-
   structural layer records what a diagram says and knows no methodology. The
   architectural layer is the base a project extends, in its own schema, with the
   kinds of element and relation it means. Import it as `slarti:vocabulary`.
-version: 0.5.0
+version: 0.6.0
 license: Apache-2.0
 prefixes:
   slarti_vocabulary: https://dsummersl.github.io/slarti/vocabulary/
@@ -294,6 +294,14 @@ classes:
         required: true
       description:
         description: What the relation means.
+      contract:
+        description: >-
+          Where the agreement the relation crosses is written down: a path relative
+          to the project root (an API definition, a migration directory, an event
+          definition), or the name of a project schema class. 'none' says the
+          relation has no written contract, and 'contract_reason' says why.
+      contract_reason:
+        description: Why a relation whose contract is 'none' has no written contract.
 
 enums:
   Cardinality:
