@@ -127,6 +127,22 @@ def init(
         typer.echo(f"created {name}")
     for name in result.skipped:
         typer.secho(f"kept    {name} (already exists)", fg="yellow")
+    _show_regions(directory, result.written)
+
+
+def _kept_documents(directory: Path, written: list[str]) -> list[str]:
+    try:
+        documents = config_module.load(directory).documents
+    except config_module.ConfigError:
+        return []
+    return [d for d in documents if d not in written and (directory / d).is_file()]
+
+
+def _show_regions(directory: Path, written: list[str]) -> None:
+    """For each configured document init found and kept, the markers it would have written."""
+    for name in _kept_documents(directory, written):
+        typer.echo(f"\nAdd these markers to {name}; 'check --fix' fills them:")
+        typer.echo("\n".join(scaffold.region_help()))
 
 
 def _load_config() -> config_module.Config:
@@ -182,7 +198,7 @@ def _show_vocabulary() -> None:
 
 
 def _probe_line(probe: Probe) -> str:
-    mark = "ok  " if probe.ok else "FAIL"
+    mark = "FAIL" if not probe.ok else "skip" if probe.version == env.NOT_PINNED else "ok  "
     return f"{mark} {probe.tool:8} {(probe.version or '-'):10} {probe.location or '-'}"
 
 

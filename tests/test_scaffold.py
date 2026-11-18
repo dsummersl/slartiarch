@@ -93,3 +93,27 @@ def test_scaffold_checks_and_fixes_without_node(tmp_path: Path, monkeypatch) -> 
     assert fixed.exit_code == 0, fixed.stdout
     check = runner.invoke(app, ["check"])
     assert check.exit_code == 0, check.stdout
+
+
+def test_init_prints_the_region_markers_when_it_keeps_the_document(tmp_path: Path) -> None:
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/architecture.md").write_text("# Mine\n", encoding="utf-8")
+    result = CliRunner().invoke(app, ["init", str(tmp_path)])
+    assert "kept    docs/architecture.md" in result.stdout
+    for name in ("ownership", "linkml_erd", "constraints", "unverified", "diagram:<view>"):
+        assert f"<!-- slarti:begin {name} -->" in result.stdout
+    assert "(tmp" not in result.stdout
+
+
+def test_init_prints_no_markers_for_a_fresh_project(tmp_path: Path) -> None:
+    result = CliRunner().invoke(app, ["init", str(tmp_path)])
+    assert "Add these markers" not in result.stdout
+
+
+def test_init_region_hint_follows_the_configured_document(tmp_path: Path) -> None:
+    (tmp_path / "slarti.toml").write_text(
+        "[paths]\ndocuments = [\"notes/arch.md\"]\n", encoding="utf-8")
+    (tmp_path / "notes").mkdir()
+    (tmp_path / "notes/arch.md").write_text("# Mine\n", encoding="utf-8")
+    result = CliRunner().invoke(app, ["init", str(tmp_path)])
+    assert "Add these markers to notes/arch.md" in result.stdout

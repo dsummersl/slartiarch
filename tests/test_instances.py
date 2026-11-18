@@ -154,3 +154,28 @@ def test_a_malformed_schema_is_a_finding_not_a_crash(tmp_path) -> None:
     )
     corpus = instances.load(config)
     assert [f.id for f in corpus.findings] == ["INP-4"]
+
+
+C4_ELEMENTS = (
+    "elements:\n  - {id: user, kind: Person, name: User}\n"
+    "  - {id: todo.api, kind: Container, system: todo, name: API}\n"
+)
+
+
+def test_inp3_c4_kinds_say_to_import_the_profile(tmp_path: Path) -> None:
+    cfg = project(tmp_path)
+    write(cfg, "c4.yaml", C4_ELEMENTS)
+    findings = [f for f in instances.load(cfg).findings if f.file.endswith("c4.yaml")]
+    assert ids(findings) == ["INP-3"]
+    assert "slarti:c4" in findings[0].remedy
+    assert "imports:" in findings[0].remedy
+
+
+def test_inp3_c4_kinds_validate_once_the_profile_is_imported(tmp_path: Path) -> None:
+    cfg = project(tmp_path)
+    schema = next((cfg.root / "schema").glob("*.yaml"))
+    text = schema.read_text(encoding="utf-8")
+    assert "imports:" in text
+    schema.write_text(text.replace("imports:\n", "imports:\n  - slarti:c4\n", 1), encoding="utf-8")
+    write(cfg, "c4.yaml", C4_ELEMENTS)
+    assert [f for f in instances.load(cfg).findings if f.file.endswith("c4.yaml")] == []

@@ -128,6 +128,24 @@ DOCUMENT = """# Architecture
 """
 
 
+# The generated regions a document may carry, and what each one generates.
+REGIONS = (
+    ("ownership", "which element owns each domain class"),
+    ("linkml_erd", "an entity-relationship diagram of the LinkML schema"),
+    ("constraints", "a table of the rules the registry enforces"),
+    ("unverified", "a table of the rules stated but not enforced"),
+    ("diagram:<view>", "the diagram of one view, e.g. diagram:index"),
+)
+
+
+def region_help() -> list[str]:
+    """The region markers a document can carry, each with what it generates."""
+    lines = []
+    for name, purpose in REGIONS:
+        lines += [f"<!-- slarti:begin {name} -->", f"<!-- slarti:end {name} -->  # {purpose}"]
+    return lines
+
+
 @dataclass(frozen=True)
 class Scaffolded:
     """Files written by init, and files left alone because they existed."""

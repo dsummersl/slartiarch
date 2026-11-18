@@ -152,3 +152,19 @@ def test_report_says_when_no_shape_is_orphaned(tmp_path: Path, monkeypatch) -> N
 def test_help_shows_no_double_backticks() -> None:
     assert "``" not in RUNNER.invoke(app, ["--help"]).stdout
     assert "``" not in RUNNER.invoke(app, ["check", "--help"]).stdout
+
+
+LINT_WARNINGS = "  warning  Slot 'email' lacks recommended slot 'description'  (recommended)\n"
+
+
+def test_lint_warnings_only_point_at_the_lint_config(capsys) -> None:
+    failure = delegated.Delegation("linkml", ["linkml"], Result(1, LINT_WARNINGS, ""))
+    assert delegated.report([failure]) == 1
+    assert ".linkmllint.yaml" in capsys.readouterr().err
+
+
+def test_lint_errors_get_no_hint(capsys) -> None:
+    out = LINT_WARNINGS + "  error  Class 'X' has no name  (rule)\n"
+    failure = delegated.Delegation("linkml", ["linkml"], Result(1, out, ""))
+    delegated.report([failure])
+    assert ".linkmllint.yaml" not in capsys.readouterr().err

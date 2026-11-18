@@ -85,3 +85,36 @@ def test_an_empty_region_is_not_yet_generated_rather_than_stale() -> None:
     current = "<!-- slarti:begin ownership -->\n<!-- slarti:end ownership -->\n"
     (finding,) = doc_checks._region_findings("a.md", current, rendered)
     assert "has not been generated yet" in finding.message
+
+
+UNVERIFIED = Constraint(
+    id="D2", statement="Prose only.", enforced_by=Enforcer(),
+    reason="No mechanism.", decision=None,
+)
+
+
+def _doc4(models, monkeypatch, text: str, constraint: Constraint):
+    prepare(models, text, monkeypatch=monkeypatch)
+    findings = doc_checks.check(models.config, models, [constraint])
+    return [f for f in findings if f.id == "DOC-4"]
+
+
+def test_doc4_names_the_region_missing_from_every_document(models, monkeypatch) -> None:
+    text = DOCUMENT.replace("unverified", "other")
+    (finding,) = _doc4(models, monkeypatch, text, UNVERIFIED)
+    assert "<!-- slarti:begin unverified -->" in finding.remedy
+    assert "<!-- slarti:end unverified -->" in finding.remedy
+    assert "generation bug" not in finding.remedy
+
+
+def test_doc4_names_the_constraints_region_for_enforced_rules(models, monkeypatch) -> None:
+    text = DOCUMENT.replace("constraints", "other")
+    (finding,) = _doc4(models, monkeypatch, text, CONSTRAINT)
+    assert "<!-- slarti:begin constraints -->" in finding.remedy
+
+
+def test_doc4_keeps_generation_bug_when_the_region_exists(models, monkeypatch) -> None:
+    monkeypatch.setattr(doc_checks.generate, "TABLE_REGIONS", ("constraints", "unverified"))
+    monkeypatch.setattr(generate, "constraints_table", lambda constraints: "| none |")
+    (finding,) = _doc4(models, monkeypatch, DOCUMENT, CONSTRAINT)
+    assert "generation bug" in finding.remedy
