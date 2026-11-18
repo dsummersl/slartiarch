@@ -4,7 +4,8 @@
       "kind": "Reads",
       "source": "todo.api",
       "target": "todo.db",
-      "description": "The API reads tasks from the database."
+      "description": "The API reads tasks from the database.",
+      "contract": "Task"
     }
   ]
 }

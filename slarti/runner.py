@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from slarti import registry
-from slarti.checks import delegated, doc_checks, ownership, registry_checks, structure
+from slarti.checks import delegated, doc_checks, ownership, registry_checks, seams, structure
 from slarti.config import Config
 from slarti.findings import Report
 from slarti.models import Models
@@ -43,6 +43,7 @@ def check(ctx: Context, include_docs: bool = True) -> tuple[Report, bool]:
     report.extend(ctx.models.mermaid.findings)
     report.extend(ownership.check(ctx.models))
     report.extend(structure.check(ctx.models))
+    report.extend(seams.check(ctx.models))
     report.extend(registry_checks.check(ctx.config, ctx.models, ctx.constraints))
     if include_docs:
         report.extend(doc_checks.check(ctx.config, ctx.models, ctx.constraints))
@@ -54,7 +55,8 @@ def _checked(ctx: Context, delegations: int, include_docs: bool) -> int:
     classes = len(ownership.owned_classes(ctx.models))
     elements = len(ctx.models.vocabulary.elements)
     docs_count = 3 if include_docs else 0
-    seams = len(ctx.constraints) + len(ctx.models.shapes)
+    registered = len(ctx.constraints) + len(ctx.models.shapes)
     inputs = ctx.models.instances.files + ctx.models.mermaid.diagrams
     drawn = len(ctx.models.vocabulary.nodes) + len(ctx.models.vocabulary.edges)
-    return delegations + inputs + classes + elements + drawn + seams + docs_count
+    relations = len(ctx.models.vocabulary.relations)
+    return delegations + inputs + classes + elements + drawn + relations + registered + docs_count

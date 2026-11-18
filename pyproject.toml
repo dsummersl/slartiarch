@@ -80,7 +80,7 @@ ignore_errors = true
 
 [tool.vulture]
 # typer registers these as commands; vulture cannot see the decorator.
-ignore_names = ["doctor", "report_command", "_version_callback"]
+ignore_names = ["doctor", "report_command", "seams_command", "_version_callback"]
 # GENERATED: every generated slot looks unused to a caller-graph scan.
 exclude = ["slarti/domain.py"]
 

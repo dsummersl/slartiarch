@@ -1,0 +1,6 @@
+# The relation does not say where its contract is written.
+elements:
+  - {id: todo.api, kind: Service, name: API}
+  - {id: todo.db, kind: Database, name: Database}
+relations:
+  - {kind: Reads, source: todo.api, target: todo.db}
