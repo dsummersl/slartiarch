@@ -53,7 +53,7 @@ app = typer.Typer(
         "  doctor        resolve paths and probe tool versions\n"
         "  check         validate model sources against all rules (--fix regenerates regions)\n"
         "  report        every rule, shape, class, and check ID with remedy\n"
-        "  seams         the relations whose contracts a diff changes, for a PR description\n"
+        "                (--base <ref>: the relations whose contracts a diff changes, for a PR)\n"
         "\n"
         "Typical workflow: init → doctor → check --fix → check, then report for details.\n"
         "Config: slarti.toml (preferred) or tool.slartiarch in pyproject.toml.\n"
@@ -238,25 +238,29 @@ def _fixed(ctx: runner.Context) -> runner.Context:
 @app.command(name="report")
 def report_command(
     json_output: bool = typer.Option(False, "--json", help="The whole report, fully detailed."),
+    base: str | None = typer.Option(
+        None, "--base", help="Instead, list the contracts <base>...HEAD changes, for a PR body."
+    ),
+    remote: str | None = typer.Option(
+        None, "--remote-url", help="With --base: web URL of the repository for permalinks."
+    ),
 ) -> None:
-    """Rules from constraints.yaml, every shape, class, and check ID. Use --json for detail."""
+    """Rules from constraints.yaml, every shape, class, and check ID. Use --json for detail.
+
+    With --base <ref>, list instead the relations whose contracts <ref>...HEAD changes,
+    as Markdown for a PR description (--json for the same content). Each links the
+    changed lines, pinned to HEAD. Whether a change is additive or breaking is left to
+    the author: fill in each TODO. No constraint registry is needed."""
+    if base is not None:
+        _seams_report(base, json_output, remote)
+        return
     ctx = _context()
     result = report.build(ctx.models, ctx.constraints)
     typer.echo(result.as_json() if json_output else result.as_text())
     raise typer.Exit(EXIT_FINDINGS if result.orphaned else EXIT_CLEAN)
 
 
-@app.command(name="seams")
-def seams_command(
-    base: str = typer.Option("origin/main", "--base", help="Diff <base>...HEAD."),
-    json_output: bool = typer.Option(False, "--json", help="The same crossings as JSON."),
-    remote: str | None = typer.Option(
-        None, "--remote-url", help="Web URL of the repository for permalinks; default: origin."
-    ),
-) -> None:
-    """List the relations whose contracts <base>...HEAD changes, as Markdown for a PR.
-    Each links the changed lines, pinned to HEAD. Whether a change is additive or
-    breaking is left to the author: fill in each TODO."""
+def _seams_report(base: str, json_output: bool, remote: str | None) -> None:
     cfg = _load()
     _gate(cfg)
     models = Models(config=cfg)

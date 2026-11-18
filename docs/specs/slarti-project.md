@@ -319,7 +319,7 @@ ids plus declared aliases; `slarti` never guesses between candidates.
 | `slarti check --json` | Same, as structured findings on stdout. Human output suppressed. |
 | `slarti check --fix` | Regenerate diagrams and registry tables into the generated regions of the documents, then check. The only command that writes. |
 | `slarti report` | Every seam in report form: enforced rules, unenforced rules, orphaned shapes, and the check catalogue. The headline command. |
-| `slarti seams --base <ref>` | The relations whose contracts `<ref>...HEAD` changed, as Markdown for a PR body, with permalinks pinned to `HEAD`; `--json` for the same content. Prints only. |
+| `slarti report --base <ref>` | Instead of the rule report, the relations whose contracts `<ref>...HEAD` changed, as Markdown for a PR body, with permalinks pinned to `HEAD`; `--json` for the same content, `--remote-url` to override the permalink host. Needs no registry; git failures exit `2`. Prints only. |
 | `slarti report --json` | The same report, fully detailed: resolved enforcers, shape references, ownership, elements, and every check with its remedy. Primarily for agents. |
 
 **Exit codes:** `0` clean · `1` findings · `2` environment or usage error.
