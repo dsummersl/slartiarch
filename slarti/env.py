@@ -107,6 +107,7 @@ def _classify(req: Requirement, version: Version, location: str | None) -> Probe
 MERMAID = Requirement(
     "mermaid", (11, 0, 0), (13, 0, 0), [], "npm install @mermaid-js/mermaid-cli@^12"
 )
+NOT_PINNED = "not pinned"
 MERMAID_PACKAGE = Path("node_modules/mermaid/package.json")
 
 
@@ -115,7 +116,7 @@ def probe_mermaid(root: Path) -> Probe:
     package = root / MERMAID_PACKAGE
     if not package.is_file():
         detail = f"none pinned; the adapter reads the Mermaid {range_text(MERMAID)} subset"
-        return _probe(MERMAID.tool, None, None, detail, True)
+        return Probe(tool=MERMAID.tool, version=NOT_PINNED, location=None, detail=detail, ok=True)
     try:
         version = parse_version(str(json.loads(package.read_text(encoding="utf-8"))["version"]))
     except (ValueError, KeyError, TypeError):

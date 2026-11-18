@@ -4,9 +4,10 @@ from pathlib import Path
 
 from slarti import docs, generate, inject
 from slarti.config import Config
+from slarti.domain import Region
 from slarti.findings import Finding, Severity
 from slarti.models import Models
-from slarti.registry import Constraint
+from slarti.registry import Constraint, is_unenforced
 
 
 def _doc3(file: str, message: str, subject: str, remedy: str) -> Finding:
@@ -54,16 +55,24 @@ def _ungenerated(file: str, region: str) -> Finding:
     )
 
 
-def _doc4(file: str, constraint_id: str) -> Finding:
+def _doc4(file: str, constraint: Constraint, present: set[str]) -> Finding:
+    region = "unverified" if is_unenforced(constraint.enforced_by) else "constraints"
+    remedy = "This is a generation bug in slarti; please report it with the registry entry."
+    if region not in present:
+        remedy = (
+            f"No document has a '{region}' region. Add these markers where the table belongs, "
+            f"then run 'slartiarch check --fix':\n"
+            f"<!-- slarti:begin {region} -->\n<!-- slarti:end {region} -->"
+        )
     return Finding(
         id="DOC-4",
         severity=Severity.error,
         file=file,
-        subject=constraint_id,
+        subject=constraint.id,
         message=(
-            f"constraint {constraint_id} is in the registry but has no row in the document tables."
+            f"constraint {constraint.id} is in the registry but has no row in the document tables."
         ),
-        remedy="This is a generation bug in slarti; please report it with the registry entry.",
+        remedy=remedy,
     )
 
 
@@ -82,9 +91,15 @@ def _region_findings(file: str, current: str, rendered: docs.Rendered) -> list[F
     ]
 
 
+def _table_regions(text: str) -> list[Region]:
+    return [r for r in inject.regions(text) if r.name in generate.TABLE_REGIONS]
+
+
 def _table_findings(file: str, constraints: list[Constraint], text: str) -> list[Finding]:
-    tables = "".join(r.body for r in inject.regions(text) if r.name in generate.TABLE_REGIONS)
-    return [_doc4(file, c.id) for c in constraints if f"| {c.id} |" not in tables]
+    found = _table_regions(text)
+    tables = "".join(r.body for r in found)
+    present = {r.name for r in found}
+    return [_doc4(file, c, present) for c in constraints if f"| {c.id} |" not in tables]
 
 
 def _check_one_doc(

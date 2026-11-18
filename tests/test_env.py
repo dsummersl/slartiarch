@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from slarti import env, proc
+from slarti import cli, env, proc
 
 LIKEC4 = next(r for r in env.REQUIREMENTS if r.tool == "likec4")
 
@@ -62,3 +62,12 @@ def test_a_tool_beside_the_interpreter_resolves_off_path(monkeypatch, tmp_path: 
     monkeypatch.setenv("PATH", "")
     assert proc.resolve("linkml") == str(tmp_path / "linkml")
     assert proc.resolve("pyshacl") is None
+
+
+def test_unpinned_mermaid_is_skipped_not_found(tmp_path: Path) -> None:
+    probe = env.probe_mermaid(tmp_path)
+    assert probe.ok
+    line = cli._probe_line(probe)
+    assert line.startswith("skip mermaid")
+    assert "not pinned" in line
+    assert "not found" not in line

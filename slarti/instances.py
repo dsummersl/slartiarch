@@ -18,6 +18,9 @@ TARGET_CLASS = "Corpus"
 INSTANCES = "instances"
 # The slots by which a C4 profile element names the element it sits inside.
 CONTAINED_BY = ("system", "container")
+# The classes of the C4 profile, which a project schema must import as 'slarti:c4'.
+C4_KINDS = ("Person", "SoftwareSystem", "Container", "Component", "Relationship")
+C4_IMPORT = "imports:\n  - linkml:types\n  - slarti:c4"
 
 
 @dataclass(frozen=True)
@@ -153,6 +156,28 @@ def _nonconforming(config: Config, path: Path, message: str) -> Finding:
     )
 
 
+def _missing_c4(config: Config, path: Path) -> Finding:
+    return Finding(
+        id="INP-3",
+        severity=Severity.error,
+        file=config.rel(path),
+        subject=config.rel(path),
+        message=(
+            "instance file uses C4 kinds (Person, SoftwareSystem, Container, Component, "
+            "Relationship) but the project schema does not import 'slarti:c4'."
+        ),
+        remedy=(
+            "Add 'slarti:c4' to the schema's imports; the C4 kinds and slots such as 'system' "
+            f"then validate:\n{C4_IMPORT}"
+        ),
+    )
+
+
+def _uses_c4(raw: dict[str, Any]) -> bool:
+    items = [*_listed(raw, "elements"), *_listed(raw, "relations")]
+    return any(item.get("kind") in C4_KINDS for item in items)
+
+
 def _parse(path: Path) -> Any:
     text = path.read_text(encoding="utf-8")
     return json.loads(text) if path.suffix == ".json" else yaml.safe_load(text)
@@ -260,6 +285,8 @@ def add(corpus: Corpus, file: str, raw: dict[str, Any], notation: str = INSTANCE
 
 def _findings(config: Config, path: Path, raw: dict[str, Any], view: SchemaView) -> list[Finding]:
     results = validate(raw, view.schema, TARGET_CLASS).results
+    if results and _uses_c4(raw) and view.get_class("Container") is None:
+        return [_missing_c4(config, path)]
     return [_nonconforming(config, path, r.message) for r in results]
 
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -56,9 +58,26 @@ def run_all(config: Config) -> list[Delegation]:
     return [*likec4, *linkml_lint(config)]
 
 
+LINT_ISSUE = re.compile(r"^\s*(error|warning)\s", re.MULTILINE)
+LINT_HINT = (
+    "note: 'linkml lint' reported only warnings, which fail it by default. Tune what it "
+    "reports in .linkmllint.yaml at the project root (see the README); slarti passes no "
+    "lint options of its own."
+)
+
+
+def _only_warnings(delegation: Delegation) -> bool:
+    if delegation.tool != "linkml":
+        return False
+    levels = set(LINT_ISSUE.findall(delegation.result.stdout + delegation.result.stderr))
+    return levels == {"warning"}
+
+
 def report(delegations: list[Delegation]) -> int:
     """Pass every delegated diagnostic through unaltered; the number that failed."""
     failed = [d for d in delegations if not d.ok]
     for delegation in failed:
         proc.passthrough(delegation.result)
+        if _only_warnings(delegation):
+            sys.stderr.write(LINT_HINT + "\n")
     return len(failed)

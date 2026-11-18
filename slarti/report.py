@@ -95,7 +95,9 @@ CHECKS: dict[str, str] = {
     ),
     "DOC-4": (
         "A constraint in the registry has no row in the generated tables.\n"
-        "Remedy: this is a generation bug in slarti; report it with the registry entry."
+        "Remedy: if no document has the region the constraint belongs in ('constraints', or "
+        "'unverified' for enforced_by: none), add its markers; otherwise this is a generation "
+        "bug in slarti, so report it with the registry entry."
     ),
     "INP-1": (
         "A configured instance input does not exist.\n"
@@ -108,7 +110,8 @@ CHECKS: dict[str, str] = {
     "INP-3": (
         "An instance file does not conform to the vocabulary or the project schema.\n"
         "Remedy: correct the instance so it validates as 'Corpus', or declare the missing "
-        "kind in the project schema."
+        "kind in the project schema. For the C4 kinds (Person, SoftwareSystem, Container, "
+        "Component, Relationship), add 'slarti:c4' to the schema's imports."
     ),
     "INP-4": (
         "The project schema cannot be loaded, so instances cannot be validated.\n"

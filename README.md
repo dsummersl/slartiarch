@@ -55,6 +55,28 @@ docs/
     data/invalid/*     one fixture per SHACL rule; each must fail
 ```
 
+### Generated regions
+
+`check --fix` fills the regions a document declares between
+`<!-- slarti:begin <name> -->` and `<!-- slarti:end <name> -->`. `init` keeps an
+existing `docs/architecture.md` and prints these markers for you to add:
+
+| Region | Generates |
+| --- | --- |
+| `ownership` | which element owns each domain class |
+| `linkml_erd` | an entity-relationship diagram of the LinkML schema |
+| `constraints` | a table of the rules the registry enforces |
+| `unverified` | a table of the rules stated but not enforced (`enforced_by: none`) |
+| `diagram:<view>` | the diagram of one view, e.g. `diagram:index` |
+
+### Lint warnings
+
+`check` runs `linkml lint` on your schemas, and `linkml lint` exits non-zero on
+warnings (such as a slot with no `description`) by default. slarti passes it no
+options of its own. To change what lint reports or tolerates, put a
+`.linkmllint.yaml` in the project root; slarti runs lint from there. When lint fails
+with warnings only, `check` says so and points here.
+
 ## How the tools work together
 
 Mermaid (or LikeC4) draws the system. LinkML defines the entities. SHACL validates

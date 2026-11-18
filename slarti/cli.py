@@ -124,6 +124,9 @@ def init(
         typer.echo(f"created {name}")
     for name in result.skipped:
         typer.secho(f"kept    {name} (already exists)", fg="yellow")
+    if "docs/architecture.md" in result.skipped:
+        typer.echo("\nAdd these markers to docs/architecture.md; 'check --fix' fills them:")
+        typer.echo("\n".join(scaffold.region_help()))
 
 
 def _load_config() -> config_module.Config:
@@ -179,7 +182,7 @@ def _show_vocabulary() -> None:
 
 
 def _probe_line(probe: Probe) -> str:
-    mark = "ok  " if probe.ok else "FAIL"
+    mark = "FAIL" if not probe.ok else "skip" if probe.version == env.NOT_PINNED else "ok  "
     return f"{mark} {probe.tool:8} {(probe.version or '-'):10} {probe.location or '-'}"
 
 
